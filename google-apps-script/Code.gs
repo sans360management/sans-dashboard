@@ -1,28 +1,36 @@
 /**
  * Sans Dashboard — Google Sheet 数据接口（Apps Script Web App）
  *
- * 作用：把你私密 Google Sheet 里的数据，转成 dashboard 需要的 JSON。
- * 只有带正确 token 的请求才会返回数据（token 只存在 Vercel 服务器端）。
+ * 直接读取你现有的两个表格（不用改表格排版）：
+ *   1) Ads Report          —— 每月一个标签页（如 "Jan 2026"），每天一行
+ *   2) Daily Leads Status  —— 每月一个标签页（如 "JANUARY 2026 Lead Report"），横向按日期
  *
- * 需要的工作表（标签页）名称与列：
- *   1) AdsDaily    列: 日期 | 花费 | Leads | 信息(Messages)
- *   2) Sales       列: 月份(如 "Jan 26") | 营业额
- *   3) BranchDaily 列: 分店 | 日期 | Leads | 预约(Appt) | 取消(Cancel)
- *   （第一行都是表头，会被自动跳过）
+ * 自动按月汇总、自动识别新月份。只有带正确 token 的请求才返回数据。
+ *
+ * 设置：① 把下面 TOKEN 改成你自己的随机字符串（和 Vercel 的 APPS_SCRIPT_TOKEN 一致）
+ *      ② 部署为 Web app（执行身份=我，访问权限=任何人）
  */
 
-// ⚠️ 改成你自己的随机字符串，并把同样的值填到 Vercel 的 APPS_SCRIPT_TOKEN
+// ⚠️ 改成你自己的随机字符串
 var TOKEN = "CHANGE_ME_to_a_long_random_string";
+
+var ADS_ID   = "1ZiriEdDq4EzTbqKC70CPQXxKVRaR2nkJjkBpq6Utuv0"; // Ads Report
+var LEADS_ID = "1QMqcPyihO-7xABaVvyTHTdU99xuhaDdlGgRhnVNV18A"; // Daily Leads Status
+
 var TZ = "Asia/Kuala_Lumpur";
+var SST = 1.06;       // 月度广告花费含 6% SST（日明细为税前）
+var YEAR_MIN = 2026;  // 只显示 2026 年起的月份
+
+var MON = { jan:"Jan",feb:"Feb",mar:"Mar",apr:"Apr",may:"May",jun:"Jun",
+            jul:"Jul",aug:"Aug",sep:"Sep",oct:"Oct",nov:"Nov",dec:"Dec" };
+var MIDX = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
 
 function doGet(e) {
   try {
-    if (!e || !e.parameter || e.parameter.token !== TOKEN) {
-      return json({ error: "unauthorized" });
-    }
+    if (!e || !e.parameter || e.parameter.token !== TOKEN) return json({ error: "unauthorized" });
     return json(buildData());
   } catch (err) {
-    return json({ error: String(err) });
+    return json({ error: String(err && err.stack || err) });
   }
 }
 
@@ -31,102 +39,138 @@ function json(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function monthLabel(d) {
-  return Utilities.formatDate(new Date(d), TZ, "MMM yy"); // -> "Jan 26"
+// ---------- 工具 ----------
+function num(v) {
+  if (typeof v === "number") return v;
+  if (v == null) return 0;
+  var s = String(v).replace(/[^0-9.\-]/g, "");
+  var n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function dayOf(v) {
+  if (v instanceof Date) return Number(Utilities.formatDate(v, TZ, "d"));
+  var m = String(v).match(/^\s*(\d{1,2})/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+function isDailyA(v) {
+  if (v instanceof Date) return true;
+  return /^\s*\d{1,2}\s*[-\/]\s*[A-Za-z]/.test(String(v));
+}
+function r1(n) { return Math.round(n * 10) / 10; }
+function r2(n) { return Math.round(n * 100) / 100; }
+function normBranch(s) { return String(s).replace(/\(.*?\)/g, "").trim(); }
+function sortKey(label) { var p = label.split(" "); return (2000 + parseInt(p[1], 10)) * 100 + (MIDX[p[0]] || 0); }
+
+// 标签页名 -> "Mon YY"（仅限月度标签页），否则 null
+function adsMonth(name) {
+  var m = String(name).match(/^([A-Za-z]+)\.?\s+(20\d\d)$/);
+  if (!m) return null;
+  var mon = MON[m[1].slice(0, 3).toLowerCase()];
+  if (!mon || parseInt(m[2], 10) < YEAR_MIN) return null;
+  return mon + " " + (parseInt(m[2], 10) % 100);
+}
+function leadsMonth(name) {
+  var m = String(name).match(/^([A-Za-z]+)\s+(20\d\d)\s+Lead\s+Report$/i);
+  if (!m) return null;
+  var mon = MON[m[1].slice(0, 3).toLowerCase()];
+  if (!mon || parseInt(m[2], 10) < YEAR_MIN) return null;
+  return mon + " " + (parseInt(m[2], 10) % 100);
 }
 
+// ---------- 主逻辑 ----------
 function buildData() {
-  var monthOrder = {}; // 月份 -> 最早日期(用于排序)
+  var adsSS = SpreadsheetApp.openById(ADS_ID);
+  var leadsSS = SpreadsheetApp.openById(LEADS_ID);
 
-  // ---- AdsDaily: 日期 | 花费 | Leads | 信息 ----
-  var adsDaily = {};
-  var adsAgg = {};
-  readRows("AdsDaily").forEach(function (r) {
-    if (!r[0]) return;
-    var date = new Date(r[0]);
-    var m = monthLabel(date);
-    var spend = num(r[1]), leads = num(r[2]), msg = num(r[3]);
-    (adsDaily[m] = adsDaily[m] || []).push({
-      d: date.getDate(), spend: spend, leads: leads, msg: msg,
-      cpl: leads > 0 ? round1(spend / leads) : null
+  var adsDaily = {};   // month -> [{d,spend,leads,msg,cpl}]
+  var ads = [];        // 月度
+  var monthsSet = {};
+
+  adsSS.getSheets().forEach(function (sh) {
+    var m = adsMonth(sh.getName());
+    if (!m) return;
+    var rows = sh.getDataRange().getValues();
+    var dstart = rows.length;
+    for (var i = 0; i < rows.length; i++) { if (isDailyA(rows[i][0])) { dstart = i; break; } }
+
+    var daily = [], spendPre = 0, leads = 0, msg = 0;
+    for (var j = dstart; j < rows.length; j++) {
+      if (!isDailyA(rows[j][0])) continue;
+      var sp = num(rows[j][1]), ms = num(rows[j][3]), ld = num(rows[j][5]);
+      daily.push({ d: dayOf(rows[j][0]), spend: sp, leads: ld, msg: ms, cpl: ld > 0 ? r1(sp / ld) : null });
+      spendPre += sp; leads += ld; msg += ms;
+    }
+    daily.sort(function (a, b) { return a.d - b.d; });
+
+    // 营业额：摘要区 C 列(index2)最大值；若没填(≈花费)则视为空
+    var spendTax = spendPre * SST;
+    var maxC = 0;
+    for (var k = 0; k < dstart; k++) { var v = num(rows[k][2]); if (v > maxC) maxC = v; }
+    var sales = maxC > spendTax * 1.5 ? maxC : null;
+
+    adsDaily[m] = daily;
+    ads.push({
+      m: m, spend: r2(spendTax), leads: leads, msg: msg,
+      cpl: leads > 0 ? r2(spendTax / leads) : null,
+      sales: sales, roas: (sales != null && spendTax > 0) ? r2(sales / spendTax) : null
     });
-    var a = (adsAgg[m] = adsAgg[m] || { spend: 0, leads: 0, msg: 0 });
-    a.spend += spend; a.leads += leads; a.msg += msg;
-    monthOrder[m] = Math.min(monthOrder[m] || Infinity, date.getTime());
+    monthsSet[m] = 1;
   });
 
-  // ---- Sales: 月份 | 营业额 ----
-  var salesByMonth = {};
-  readRows("Sales").forEach(function (r) {
-    if (!r[0]) return;
-    var m = (r[0] instanceof Date) ? monthLabel(r[0]) : String(r[0]).trim();
-    salesByMonth[m] = (r[1] === "" || r[1] == null) ? null : num(r[1]);
+  // ----- 分店 -----
+  var branchDaily = {};  // branch -> month -> [[d,leads,appt,cancel]]
+  var branchAgg = {};    // branch -> month -> {leads,appt,cancel}
+  var branchMonthsSet = {};
+
+  leadsSS.getSheets().forEach(function (sh) {
+    var m = leadsMonth(sh.getName());
+    if (!m) return;
+    var rows = sh.getDataRange().getValues();
+    if (!rows.length) return;
+    var hdr = rows[0];
+    var cols = [];
+    for (var c = 1; c < hdr.length; c += 3) {
+      var mt = String(hdr[c] == null ? "" : (hdr[c] instanceof Date ? Utilities.formatDate(hdr[c], TZ, "MMMM d, yyyy") : hdr[c])).match(/(\d{1,2}),?\s*20\d\d/);
+      cols.push({ c: c, day: mt ? parseInt(mt[1], 10) : (hdr[c] instanceof Date ? Number(Utilities.formatDate(hdr[c], TZ, "d")) : null) });
+    }
+    for (var r = 1; r < rows.length; r++) {
+      var raw = String(rows[r][0] == null ? "" : rows[r][0]).trim();
+      if (/^total/i.test(raw)) break;
+      if (!raw || /no select/i.test(raw)) continue;
+      var b = normBranch(raw);
+      for (var t = 0; t < cols.length; t++) {
+        var cc = cols[t].c, day = cols[t].day;
+        if (day == null) continue;
+        var ld = num(rows[r][cc]), ap = num(rows[r][cc + 1]), ca = num(rows[r][cc + 2]);
+        if (ld || ap || ca) {
+          ((branchDaily[b] = branchDaily[b] || {})[m] = (branchDaily[b][m] || [])).push([day, ld, ap, ca]);
+          var ba = (branchAgg[b] = branchAgg[b] || {});
+          var bm = (ba[m] = ba[m] || { leads: 0, appt: 0, cancel: 0 });
+          bm.leads += ld; bm.appt += ap; bm.cancel += ca;
+          branchMonthsSet[m] = 1;
+        }
+      }
+    }
   });
 
-  // ---- BranchDaily: 分店 | 日期 | Leads | 预约 | 取消 ----
-  var branchDaily = {};
-  var branchAgg = {};
-  readRows("BranchDaily").forEach(function (r) {
-    if (!r[0] || !r[1]) return;
-    var branch = String(r[0]).trim();
-    var date = new Date(r[1]);
-    var m = monthLabel(date);
-    var leads = num(r[2]), appt = num(r[3]), cancel = num(r[4]);
-    var bd = (branchDaily[branch] = branchDaily[branch] || {});
-    (bd[m] = bd[m] || []).push([date.getDate(), leads, appt, cancel]);
-    var ba = (branchAgg[branch] = branchAgg[branch] || {});
-    var bm = (ba[m] = ba[m] || { leads: 0, appt: 0, cancel: 0 });
-    bm.leads += leads; bm.appt += appt; bm.cancel += cancel;
-    monthOrder[m] = Math.min(monthOrder[m] || Infinity, date.getTime());
-  });
-
-  // 按时间排序的月份列表
-  var months = Object.keys(monthOrder).sort(function (a, b) {
-    return monthOrder[a] - monthOrder[b];
-  });
-
-  // 月度广告
-  var ads = months.map(function (m) {
-    var a = adsAgg[m] || { spend: 0, leads: 0, msg: 0 };
-    var sales = (m in salesByMonth) ? salesByMonth[m] : null;
-    var roas = (sales != null && a.spend > 0) ? round2(sales / a.spend) : null;
-    return {
-      m: m, spend: round2(a.spend), leads: a.leads, msg: a.msg,
-      cpl: a.leads > 0 ? round2(a.spend / a.leads) : null,
-      sales: sales, roas: roas
-    };
-  });
-
-  // 分店月度汇总
-  var branches = Object.keys(branchAgg).map(function (b) {
-    return { branch: b, m: branchAgg[b] };
-  });
-
-  // 每日数据按天排序
-  Object.keys(adsDaily).forEach(function (m) {
-    adsDaily[m].sort(function (x, y) { return x.d - y.d; });
-  });
   Object.keys(branchDaily).forEach(function (b) {
     Object.keys(branchDaily[b]).forEach(function (m) {
       branchDaily[b][m].sort(function (x, y) { return x[0] - y[0]; });
     });
   });
 
+  var adsMonths = Object.keys(monthsSet).sort(function (a, b) { return sortKey(a) - sortKey(b); });
+  var branchMonths = Object.keys(branchMonthsSet).sort(function (a, b) { return sortKey(a) - sortKey(b); });
+  ads.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
+
+  var branches = Object.keys(branchAgg).map(function (b) { return { branch: b, m: branchAgg[b] }; });
+
   return {
     ads: ads,
-    adsMonths: months,
-    branchMonths: months,
+    adsMonths: adsMonths,
+    branchMonths: branchMonths,
     branches: branches,
     adsDaily: adsDaily,
     branchDaily: branchDaily
   };
 }
-
-function readRows(sheetName) {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-  if (!sh) return [];
-  return sh.getDataRange().getValues().slice(1); // 跳过表头
-}
-function num(v) { var n = Number(v); return isNaN(n) ? 0 : n; }
-function round1(n) { return Math.round(n * 10) / 10; }
-function round2(n) { return Math.round(n * 100) / 100; }
