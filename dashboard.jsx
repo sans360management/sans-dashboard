@@ -206,6 +206,7 @@ function Dashboard() {
             <p className="text-xs mt-1" style={{ color: C.sub }}>{"Jan–Jun 2026　·　Revenue = TOTAL New Leads SALES (June in progress)"}</p>
           </div>
           <div className="flex items-end gap-3">
+            {tab !== "overview" && (
             <div>
               <label className="block text-xs mb-1" style={{ color: C.sub }}>{"View"}</label>
               <div className="flex gap-1 p-1 rounded-xl" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
@@ -214,6 +215,7 @@ function Dashboard() {
                 ))}
               </div>
             </div>
+            )}
             <div>
             <label className="block text-xs mb-1" style={{ color: C.sub }}>{"Month range"}</label>
             <div className="relative">
