@@ -22,6 +22,7 @@ const LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACqCAYAAAAqVERL
 let ADS = [], BRANCHES = [], ADS_MONTHS = [], BRANCH_MONTHS = [];
 let ADS_DAILY = {};
 let BRANCH_DAILY = {};
+let OUTLET_SALES = [];
 
 /* ----------------------------- 工具 ----------------------------- */
 const rm = (n) => "RM " + Math.round(n).toLocaleString();
@@ -151,6 +152,13 @@ function Dashboard() {
     return t;
   }, [month]);
 
+  const actualT = useMemo(() => {
+    const rows = OUTLET_SALES.filter((o) => adsActive.includes(o.m));
+    const actual = rows.reduce((a, r) => a + (r.actual || 0), 0);
+    const newLead = rows.reduce((a, r) => a + (r.newLead || 0), 0);
+    return { actual, newLead, other: Math.max(0, actual - newLead), newPct: actual > 0 ? (newLead / actual) * 100 : 0 };
+  }, [month]);
+
   const branchT = useMemo(() => BRANCHES.reduce((a, b) => {
     branchActive.forEach((mo) => { const d = b.m[mo]; if (d) { a.leads += d.leads; a.appt += d.appt; a.cancel += d.cancel; } });
     return a;
@@ -251,6 +259,7 @@ function Dashboard() {
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={adsT.leads.toLocaleString()} sub={`${"Avg CPL RM"} ${adsT.cpl.toFixed(1)}`} />
           <Kpi icon={CalendarCheck} label={"Appointments"} accent={C.gold} value={hasBranch ? branchT.appt.toLocaleString() : "—"} sub={hasBranch ? `${"Appt rate"} ${pct(branchT.appt, branchT.leads).toFixed(0)}%${" (branch lead basis)"}` : "No branch data"} />
           <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×${" (as of May 26)"}` : "New Lead Sales not entered"} />
+          <Kpi icon={Building2} label={"Actual Sales"} accent={C.brown} value={actualT.actual ? rm(actualT.actual) : "—"} sub={actualT.actual ? `New-lead share ${actualT.newPct.toFixed(0)}% · MTD Collection` : "No outlet data yet"} />
         </div>
 
         {/* ---------------- 总览 ---------------- */}
@@ -308,6 +317,24 @@ function Dashboard() {
                 </ComposedChart>
               </ResponsiveContainer>
             </Panel>
+
+            {OUTLET_SALES.length > 0 && (
+            <Panel title={"Actual Outlet Sales · composition"} hint={"Stacked = New Lead Sales + Existing/repeat = Actual Sales (MTD Collection) · ROAS stays on New Lead Sales only"}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={OUTLET_SALES} margin={{ left: 6, right: 6, top: 18 }}>
+                  <CartesianGrid stroke={C.line} vertical={false} />
+                  <XAxis dataKey="m" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => (v / 1e6).toFixed(1) + "M"} />
+                  <Tooltip contentStyle={tip} formatter={(v) => rm(v)} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="newLead" name={"New Lead Sales"} stackId="s" fill={C.gold} />
+                  <Bar dataKey="other" name={"Existing / repeat"} stackId="s" fill={C.sage} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="actual" position="top" fontSize={10} fill={C.sub} formatter={(v) => (v / 1e6).toFixed(2) + "M"} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </Panel>
+            )}
           </div>
         )}
 
@@ -457,6 +484,7 @@ function applyData(d) {
   BRANCH_MONTHS = d.branchMonths || [];
   ADS_DAILY = d.adsDaily || {};
   BRANCH_DAILY = d.branchDaily || {};
+  OUTLET_SALES = d.outletSales || [];
 }
 
 const PW_KEY = "sans_dash_pw";

@@ -165,12 +165,26 @@ function buildData() {
 
   var branches = Object.keys(branchAgg).map(function (b) { return { branch: b, m: branchAgg[b] }; });
 
+  // ----- Actual Outlet Sales（标签页 "Outlet Sales"：Month | Actual Sales | New Lead Sales）-----
+  var outletSales = [];
+  var osSheet = adsSS.getSheetByName("Outlet Sales");
+  if (osSheet) {
+    osSheet.getDataRange().getValues().slice(1).forEach(function (r) {
+      if (!r[0]) return;
+      var m = (r[0] instanceof Date) ? monthLabel(r[0]) : String(r[0]).trim();
+      var actual = num(r[1]), newLead = num(r[2]);
+      outletSales.push({ m: m, actual: actual, newLead: newLead, other: Math.max(0, actual - newLead) });
+    });
+    outletSales.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
+  }
+
   return {
     ads: ads,
     adsMonths: adsMonths,
     branchMonths: branchMonths,
     branches: branches,
     adsDaily: adsDaily,
-    branchDaily: branchDaily
+    branchDaily: branchDaily,
+    outletSales: outletSales
   };
 }
