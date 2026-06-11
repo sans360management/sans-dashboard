@@ -72,21 +72,21 @@ function AdsDaily({ rows, scopeLabel }) {
   const many = rows.length > 40;
   return (
     <>
-      <Panel title="广告每日 · 花费 & Leads" hint={`${scopeLabel} · 柱=当日花费，线=当日 Leads`}>
+      <Panel title={"Ads Daily · Spend & Leads"} hint={`${scopeLabel} · ${"Bars = daily spend, line = daily leads"}`}>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={rows} margin={{ left: -6, right: 6, top: 6 }}>
             <CartesianGrid stroke={C.line} vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 9, fill: C.sub }} axisLine={false} tickLine={false} interval={many ? 6 : 1} angle={-30} textAnchor="end" height={44} />
             <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
             <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tip} formatter={(v, n) => n === "花费" ? rm(v) : v} />
+            <Tooltip contentStyle={tip} formatter={(v, n) => n === "Spend" ? rm(v) : v} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar yAxisId="l" dataKey="spend" name="花费" fill={C.goldLt} radius={[3, 3, 0, 0]} />
+            <Bar yAxisId="l" dataKey="spend" name={"Spend"} fill={C.goldLt} radius={[3, 3, 0, 0]} />
             <Line yAxisId="r" dataKey="leads" name="Leads" stroke={C.sage} strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </Panel>
-      <Panel title="广告每日 · CPL" hint={`${scopeLabel} · 当日单条线索成本 (RM)，越低越好`}>
+      <Panel title={"Ads Daily · CPL"} hint={`${scopeLabel} · ${"Daily cost per lead (RM), lower is better"}`}>
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={rows} margin={{ left: -8, right: 6, top: 6 }}>
             <CartesianGrid stroke={C.line} vertical={false} />
@@ -104,7 +104,7 @@ function AdsDaily({ rows, scopeLabel }) {
 function BranchDaily({ branch, setBranch, rows, scopeLabel }) {
   const many = rows.length > 40;
   return (
-    <Panel title="分店每日走势" hint={`${scopeLabel} · 柱=Lead，线=预约 / Cancellation`}
+    <Panel title={"Branch Daily Trend"} hint={`${scopeLabel} · ${"Bars = Leads, lines = Appt / Cancellation"}`}
       right={
         <select value={branch} onChange={(e) => setBranch(e.target.value)} className="appearance-none rounded-lg px-3 py-1.5 text-sm font-medium outline-none cursor-pointer" style={{ background: C.sand, border: `1px solid ${C.line}`, color: C.ink }}>
           {Object.keys(BRANCH_DAILY).map((b) => <option key={b} value={b}>{b}</option>)}
@@ -118,7 +118,7 @@ function BranchDaily({ branch, setBranch, rows, scopeLabel }) {
           <Tooltip contentStyle={tip} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar dataKey="leads" name="Lead" fill={C.sageLt} radius={[3, 3, 0, 0]} />
-          <Line dataKey="appt" name="预约" stroke={C.brown} strokeWidth={2} dot={false} />
+          <Line dataKey="appt" name={"Appt"} stroke={C.brown} strokeWidth={2} dot={false} />
           <Line dataKey="cancel" name="Cancellation" stroke={C.clay} strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
@@ -170,7 +170,7 @@ function Dashboard() {
   const funnelMsg = adsT.msg, funnelLead = adsT.leads, funnelAppt = branchT.appt;
   const fMax = funnelMsg || 1;
 
-  const scopeLabel = month === "ALL" ? "全部 2026" : month;
+  const scopeLabel = month === "ALL" ? "All 2026" : month;
   const dailyAdsRows = useMemo(() => {
     const ms = month === "ALL" ? ADS_MONTHS : [month];
     const out = [];
@@ -190,9 +190,9 @@ function Dashboard() {
   }, [month, selBranch]);
 
   const TABS = [
-    { id: "overview", label: "总览", icon: LayoutGrid },
-    { id: "ads", label: "广告投放", icon: Megaphone },
-    { id: "ops", label: "分店运营", icon: Building2 },
+    { id: "overview", label: "Overview", icon: LayoutGrid },
+    { id: "ads", label: "Ads", icon: Megaphone },
+    { id: "ops", label: "Branches", icon: Building2 },
   ];
 
   return (
@@ -202,25 +202,25 @@ function Dashboard() {
         <header className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>
             <img src={LOGO} alt="Sans Wellness" style={{ height: 64, width: "auto", display: "block", marginBottom: 8 }} />
-            <h1 className="font-semibold" style={{ fontSize: 19 }}>营销综合看板 · Marketing Dashboard</h1>
-            <p className="text-xs mt-1" style={{ color: C.sub }}>2026年1月–6月　·　营业额 = TOTAL New Leads SALES（6月为当月进行中）</p>
+            <h1 className="font-semibold" style={{ fontSize: 19 }}>{"Marketing Dashboard"}</h1>
+            <p className="text-xs mt-1" style={{ color: C.sub }}>{"Jan–Jun 2026　·　Revenue = TOTAL New Leads SALES (June in progress)"}</p>
           </div>
           <div className="flex items-end gap-3">
             <div>
-              <label className="block text-xs mb-1" style={{ color: C.sub }}>视图</label>
+              <label className="block text-xs mb-1" style={{ color: C.sub }}>{"View"}</label>
               <div className="flex gap-1 p-1 rounded-xl" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
-                {[["month", "月度"], ["day", "每日"]].map(([k, l]) => (
+                {[["month", "Monthly"], ["day", "Daily"]].map(([k, l]) => (
                   <button key={k} onClick={() => setGran(k)} className="px-3 py-1.5 rounded-lg text-sm font-medium" style={{ background: gran === k ? C.brown : "transparent", color: gran === k ? "#fff" : C.sub }}>{l}</button>
                 ))}
               </div>
             </div>
             <div>
-            <label className="block text-xs mb-1" style={{ color: C.sub }}>月份范围</label>
+            <label className="block text-xs mb-1" style={{ color: C.sub }}>{"Month range"}</label>
             <div className="relative">
               <select value={month} onChange={(e) => setMonth(e.target.value)}
                 className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
                 style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
-                <option value="ALL">全部累计</option>
+                <option value="ALL">{"All cumulative"}</option>
                 {ADS_MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
               <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
@@ -243,25 +243,25 @@ function Dashboard() {
 
         {/* KPI 行 */}
         <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
-          <Kpi icon={Wallet} label="广告花费" accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
-          <Kpi icon={Users} label="总 Leads" accent={C.sage} value={adsT.leads.toLocaleString()} sub={`平均 CPL RM ${adsT.cpl.toFixed(1)}`} />
-          <Kpi icon={CalendarCheck} label="预约 Appt" accent={C.gold} value={hasBranch ? branchT.appt.toLocaleString() : "—"} sub={hasBranch ? `预约率 ${pct(branchT.appt, branchT.leads).toFixed(0)}%（分店Lead基准）` : "无分店数据"} />
-          <Kpi icon={TrendingUp} label="营业额 / ROAS" accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×（截至 May 26）` : "营业额未录入"} />
+          <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
+          <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={adsT.leads.toLocaleString()} sub={`${"Avg CPL RM"} ${adsT.cpl.toFixed(1)}`} />
+          <Kpi icon={CalendarCheck} label={"Appointments"} accent={C.gold} value={hasBranch ? branchT.appt.toLocaleString() : "—"} sub={hasBranch ? `${"Appt rate"} ${pct(branchT.appt, branchT.leads).toFixed(0)}%${" (branch lead basis)"}` : "No branch data"} />
+          <Kpi icon={TrendingUp} label={"Revenue / ROAS"} accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×${" (as of May 26)"}` : "Revenue not entered"} />
         </div>
 
         {/* ---------------- 总览 ---------------- */}
         {tab === "overview" && (
           <div className="grid gap-5">
             <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
-              <Panel title="转化漏斗 · 信息 → Lead → 预约" hint={hasBranch ? (month === "ALL" ? "Jan – Jun 26 累计" : month) : "所选月份无分店预约数据"}>
+              <Panel title={"Funnel · Message → Lead → Appt"} hint={hasBranch ? (month === "ALL" ? "Jan–Jun 26 cumulative" : month) : "No branch appt data for the selected month"}>
                 <div className="flex flex-col gap-3 mb-5">
-                  <FunnelStage label="Inbox 信息" value={funnelMsg} width={100} color={C.blue} drop="" />
-                  <FunnelStage label="Leads" value={funnelLead} width={pct(funnelLead, fMax)} color={C.sage} drop={`留存 ${pct(funnelLead, funnelMsg).toFixed(0)}%`} />
-                  {hasBranch && <FunnelStage label="预约 Appt" value={funnelAppt} width={pct(funnelAppt, fMax)} color={C.gold} drop={`预约 ${pct(funnelAppt, funnelLead).toFixed(0)}%`} />}
+                  <FunnelStage label={"Inbox Msgs"} value={funnelMsg} width={100} color={C.blue} drop="" />
+                  <FunnelStage label="Leads" value={funnelLead} width={pct(funnelLead, fMax)} color={C.sage} drop={`${"Kept"} ${pct(funnelLead, funnelMsg).toFixed(0)}%`} />
+                  {hasBranch && <FunnelStage label={"Appointments"} value={funnelAppt} width={pct(funnelAppt, fMax)} color={C.gold} drop={`${"Appt"} ${pct(funnelAppt, funnelLead).toFixed(0)}%`} />}
                 </div>
                 <div className="grid gap-3 text-center" style={{ gridTemplateColumns: hasBranch ? "repeat(3,1fr)" : "repeat(2,1fr)" }}>
-                  {[["信息 → Lead", pct(funnelLead, funnelMsg), false], ["平均 CPL", adsT.cpl, true],
-                    ...(hasBranch ? [["Lead → 预约", pct(funnelAppt, funnelLead), false]] : [])].map(([t, v, isRm]) => (
+                  {[["Msg → Lead", pct(funnelLead, funnelMsg), false], ["Avg CPL", adsT.cpl, true],
+                    ...(hasBranch ? [["Lead → Appt", pct(funnelAppt, funnelLead), false]] : [])].map(([t, v, isRm]) => (
                     <div key={t} className="rounded-xl py-3" style={{ background: C.sand }}>
                       <div className="font-semibold" style={{ fontSize: 19, color: C.brown }}>{isRm ? "RM " + v.toFixed(0) : v.toFixed(1) + "%"}</div>
                       <div className="text-xs mt-0.5" style={{ color: C.sub }}>{t}</div>
@@ -270,23 +270,23 @@ function Dashboard() {
                 </div>
               </Panel>
 
-              <Panel title="广告花费 vs ROAS" hint="柱 = 月广告花费，线 = ROAS（New Leads Sales ÷ 花费）；6月营业额待补">
+              <Panel title={"Ad Spend vs ROAS"} hint={"Bars = monthly ad spend, line = ROAS (New Leads Sales ÷ spend); June revenue pending"}>
                 <ResponsiveContainer width="100%" height={262}>
                   <ComposedChart data={adsTrend} margin={{ left: -6, right: 6, top: 6 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
                     <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
                     <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={tip} formatter={(v, n) => n === "花费" ? rm(v) : n === "ROAS" ? v + "×" : v} />
+                    <Tooltip contentStyle={tip} formatter={(v, n) => n === "Spend" ? rm(v) : n === "ROAS" ? v + "×" : v} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar yAxisId="l" dataKey="spend" name="花费" fill={C.goldLt} radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="l" dataKey="spend" name={"Spend"} fill={C.goldLt} radius={[4, 4, 0, 0]} />
                     <Line yAxisId="r" dataKey="roas" name="ROAS" stroke={C.brown} strokeWidth={2.5} dot={{ r: 2.5, fill: C.brown }} connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
               </Panel>
             </div>
 
-            <Panel title="月度 Leads 与 CPL" hint="柱 = 当月 Leads，线 = 当月平均 CPL (RM)">
+            <Panel title={"Monthly Leads & CPL"} hint={"Bars = monthly Leads, line = monthly avg CPL (RM)"}>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={adsTrend} margin={{ left: -6, right: 6, top: 6 }}>
                   <CartesianGrid stroke={C.line} vertical={false} />
@@ -309,7 +309,7 @@ function Dashboard() {
             {gran === "day" && <AdsDaily rows={dailyAdsRows} scopeLabel={scopeLabel} />}
             {gran === "month" && <>
             <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
-              <Panel title="营业额 vs 广告花费" hint="对比各月营业额与广告花费（只显示已录入营业额的月份）">
+              <Panel title={"Revenue vs Ad Spend"} hint={"Revenue vs ad spend by month (only months with revenue entered)"}>
                 <ResponsiveContainer width="100%" height={262}>
                   <BarChart data={adsTrend} margin={{ left: -2, right: 6, top: 6 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
@@ -317,32 +317,32 @@ function Dashboard() {
                     <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
                     <Tooltip contentStyle={tip} formatter={(v) => rm(v)} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="sales" name="营业额" fill={C.gold} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="spend" name="广告花费" fill={C.sageLt} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sales" name={"Revenue"} fill={C.gold} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="spend" name={"Ad Spend"} fill={C.sageLt} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </Panel>
-              <Panel title="信息量 → Leads 转化" hint="柱 = Inbox 信息量，线 = 信息转 Lead 比率">
+              <Panel title={"Messages → Leads Conversion"} hint={"Bars = Inbox messages, line = msg-to-lead rate"}>
                 <ResponsiveContainer width="100%" height={262}>
                   <ComposedChart data={adsTrend.map((d) => ({ ...d, conv: pct(d.leads, d.msg) }))} margin={{ left: -8, right: 6, top: 6 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
                     <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v + "%"} />
-                    <Tooltip contentStyle={tip} formatter={(v, n) => n === "信息转Lead" ? v.toFixed(0) + "%" : v} />
+                    <Tooltip contentStyle={tip} formatter={(v, n) => n === "Msg to Lead %" ? v.toFixed(0) + "%" : v} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar yAxisId="l" dataKey="msg" name="Inbox 信息" fill={C.blue} radius={[4, 4, 0, 0]} />
-                    <Line yAxisId="r" dataKey="conv" name="信息转Lead" stroke={C.brown} strokeWidth={2.5} dot={{ r: 2, fill: C.brown }} />
+                    <Bar yAxisId="l" dataKey="msg" name={"Inbox Msgs"} fill={C.blue} radius={[4, 4, 0, 0]} />
+                    <Line yAxisId="r" dataKey="conv" name={"Msg to Lead %"} stroke={C.brown} strokeWidth={2.5} dot={{ r: 2, fill: C.brown }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </Panel>
             </div>
 
-            <Panel title="月度广告明细" hint="营业额 = TOTAL New Leads SALES · 6月当月进行中、营业额待补">
+            <Panel title={"Monthly Ad Detail"} hint={"Revenue = TOTAL New Leads SALES · June in progress, revenue pending"}>
               <div className="overflow-x-auto">
                 <table className="w-full" style={{ fontSize: 13, borderCollapse: "collapse" }}>
                   <thead><tr style={{ color: C.sub, fontSize: 11 }}>
-                    {["月份", "广告花费", "Inbox 信息", "Leads", "CPL", "营业额", "ROAS"].map((h, i) => (
+                    {["Month", "Ad Spend", "Inbox Msgs", "Leads", "CPL", "Revenue", "ROAS"].map((h, i) => (
                       <th key={h} className="py-2 px-2 font-medium" style={{ textAlign: i === 0 ? "left" : "right", borderBottom: `1px solid ${C.line}` }}>{h}</th>
                     ))}
                   </tr></thead>
@@ -361,7 +361,7 @@ function Dashboard() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs mt-3" style={{ color: C.sub }}>CPL 色标：<span style={{ color: C.sage }}>绿 ≤RM80</span> ·　<span style={{ color: C.gold }}>金 RM80–110</span> ·　<span style={{ color: C.clay }}>红 &gt;RM110</span></p>
+              <p className="text-xs mt-3" style={{ color: C.sub }}>{"CPL legend: "}<span style={{ color: C.sage }}>{"Green ≤RM80"}</span> ·　<span style={{ color: C.gold }}>{"Gold RM80–110"}</span> ·　<span style={{ color: C.clay }}>{"Red >RM110"}</span></p>
             </Panel>
             </>}
           </div>
@@ -371,16 +371,16 @@ function Dashboard() {
         {tab === "ops" && (
           <div className="grid gap-5">
             {!hasBranch && (
-              <Panel title="分店运营">
-                <p className="text-sm" style={{ color: C.sub }}>所选月份（{month}）暂无分店数据。请选「全部累计」或其他 2026 月份。</p>
+              <Panel title={"Branch Operations"}>
+                <p className="text-sm" style={{ color: C.sub }}>{"Selected month ("}{month}{"): no branch data. Pick All-cumulative or another 2026 month."}</p>
               </Panel>
             )}
             {hasBranch && gran === "day" && <BranchDaily branch={selBranch} setBranch={setSelBranch} rows={dailyBranchRows} scopeLabel={scopeLabel} />}
             {hasBranch && gran === "month" && <>
-              <Panel title="分店对比" hint={`${month === "ALL" ? "Jan – Jun 26 累计" : month} · 切换排序指标`}
+              <Panel title={"Branch Comparison"} hint={`${month === "ALL" ? "Jan–Jun 26 cumulative" : month} · ${"switch sort metric"}`}
                 right={
                   <div className="flex flex-wrap gap-1 p-1 rounded-lg" style={{ background: C.sand }}>
-                    {[["leads", "Leads"], ["appt", "预约"], ["cancel", "Cancel"], ["apptRate", "预约率"]].map(([k, l]) => (
+                    {[["leads", "Leads"], ["appt", "Appt"], ["cancel", "Cancel"], ["apptRate", "Appt %"]].map(([k, l]) => (
                       <button key={k} onClick={() => setSortBy(k)} className="px-2.5 py-1 rounded-md text-xs font-medium"
                         style={{ background: sortBy === k ? C.brown : "transparent", color: sortBy === k ? "#fff" : C.sub }}>{l}</button>
                     ))}
@@ -392,18 +392,18 @@ function Dashboard() {
                     <XAxis type="number" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => sortBy === "apptRate" ? v + "%" : v} />
                     <YAxis type="category" dataKey="branch" tick={{ fontSize: 10, fill: C.ink }} width={120} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tip} formatter={(v) => sortBy === "apptRate" ? v.toFixed(1) + "%" : v} />
-                    <Bar dataKey={sortBy} name={{ leads: "Leads", appt: "预约", cancel: "Cancellation", apptRate: "预约率%" }[sortBy]} radius={[0, 5, 5, 0]}>
+                    <Bar dataKey={sortBy} name={{ leads: "Leads", appt: "Appt", cancel: "Cancellation", apptRate: "Appt %" }[sortBy]} radius={[0, 5, 5, 0]}>
                       {sorted.map((_, i) => <Cell key={i} fill={i === 0 ? C.brown : i < 3 ? C.gold : C.sageLt} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </Panel>
 
-              <Panel title="分店明细表" hint="预约率 = 预约 ÷ Leads；取消率 = Cancellation ÷ 预约 · 按 Leads 排序">
+              <Panel title={"Branch Detail"} hint={"Appt rate = Appt ÷ Leads; Cancel rate = Cancellation ÷ Appt · sorted by Leads"}>
                 <div className="overflow-x-auto">
                   <table className="w-full" style={{ fontSize: 13, borderCollapse: "collapse" }}>
                     <thead><tr style={{ color: C.sub, fontSize: 11 }}>
-                      {["分店", "Leads", "预约", "Cancel", "预约率", "取消率"].map((h, i) => (
+                      {["Branch", "Leads", "Appt", "Cancel", "Appt %", "Cancel %"].map((h, i) => (
                         <th key={h} className="py-2 px-2 font-medium" style={{ textAlign: i === 0 ? "left" : "right", borderBottom: `1px solid ${C.line}` }}>{h}</th>
                       ))}
                     </tr></thead>
@@ -421,14 +421,14 @@ function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs mt-3" style={{ color: C.sub }}>预约率色标：<span style={{ color: C.sage }}>绿 ≥55%</span> ·　<span style={{ color: C.gold }}>金 40–55%</span> ·　<span style={{ color: C.clay }}>红 &lt;40%</span></p>
+                <p className="text-xs mt-3" style={{ color: C.sub }}>{"Appt rate legend: "}<span style={{ color: C.sage }}>{"Green ≥55%"}</span> ·　<span style={{ color: C.gold }}>{"Gold 40–55%"}</span> ·　<span style={{ color: C.clay }}>{"Red <40%"}</span></p>
               </Panel>
             </>}
           </div>
         )}
 
         <footer className="text-center mt-8 text-xs" style={{ color: C.sub }}>
-          数据来源：Ads Report（每日广告）· All Branch Lead Report（每日分店 Leads / 预约 / Cancellation）— Google Drive
+          {"Source: Ads Report (daily ads) · All Branch Lead Report (daily branch Leads / Appt / Cancellation) — Google Drive"}
         </footer>
       </div>
     </div>
@@ -467,7 +467,7 @@ export default function App() {
       });
       if (res.status === 401) {
         sessionStorage.removeItem(PW_KEY);
-        setErr("密码错误，请重试");
+        setErr("Wrong password, please try again");
         setPhase("login");
         return;
       }
@@ -484,7 +484,7 @@ export default function App() {
       setVersion((v) => v + 1);
       setPhase("ready");
     } catch (e) {
-      setErr("加载失败：" + e.message);
+      setErr("Load failed: " + e.message);
       if (!silent) setPhase("error");
     }
   };
@@ -521,14 +521,14 @@ export default function App() {
     <div style={{ background: C.sand, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif" }}>
       <form onSubmit={(e) => { e.preventDefault(); if (pw) load(pw); }}
         style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 20, padding: 36, width: 340, maxWidth: "100%", boxShadow: "0 10px 40px rgba(85,33,2,0.08)" }}>
-        <h1 style={{ color: C.brown, fontSize: 20, fontWeight: 600, margin: 0 }}>营销综合看板</h1>
-        <p style={{ color: C.sub, fontSize: 13, margin: "6px 0 20px" }}>请输入访问密码</p>
-        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus placeholder="密码" disabled={busy}
+        <h1 style={{ color: C.brown, fontSize: 20, fontWeight: 600, margin: 0 }}>{"Marketing Dashboard"}</h1>
+        <p style={{ color: C.sub, fontSize: 13, margin: "6px 0 20px" }}>{"Enter access password"}</p>
+        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus placeholder={"Password"} disabled={busy}
           style={{ width: "100%", boxSizing: "border-box", padding: "11px 14px", borderRadius: 12, border: `1px solid ${C.line}`, background: C.sand, color: C.ink, fontSize: 14, outline: "none" }} />
         {err && <p style={{ color: C.clay, fontSize: 12, margin: "10px 0 0" }}>{err}</p>}
         <button type="submit" disabled={busy || !pw}
           style={{ width: "100%", marginTop: 16, padding: "11px 0", borderRadius: 12, border: "none", background: C.brown, color: "#fff", fontSize: 14, fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: (busy || !pw) ? 0.6 : 1 }}>
-          {busy ? "登录中…" : "登录"}
+          {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </div>
@@ -539,9 +539,9 @@ function RefreshBar({ updatedAt, onRefresh, onLogout }) {
   const t = updatedAt ? updatedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "—";
   return (
     <div style={{ position: "fixed", right: 16, bottom: 16, display: "flex", alignItems: "center", gap: 10, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "7px 14px", fontSize: 12, color: C.sub, boxShadow: "0 4px 16px rgba(85,33,2,0.10)", zIndex: 50 }}>
-      <span>最后更新 {t}</span>
-      <button onClick={onRefresh} style={{ border: "none", background: C.sage, color: "#fff", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>刷新</button>
-      <button onClick={onLogout} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>退出</button>
+      <span>{"Updated"} {t}</span>
+      <button onClick={onRefresh} style={{ border: "none", background: C.sage, color: "#fff", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{"Refresh"}</button>
+      <button onClick={onLogout} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>{"Log out"}</button>
     </div>
   );
 }
