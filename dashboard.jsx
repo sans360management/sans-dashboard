@@ -205,7 +205,7 @@ function Dashboard() {
           <div>
             <img src={LOGO} alt="Sans Wellness" style={{ height: 64, width: "auto", display: "block", marginBottom: 8 }} />
             <h1 className="font-semibold" style={{ fontSize: 19 }}>{"Marketing Dashboard"}</h1>
-            <p className="text-xs mt-1" style={{ color: C.sub }}>{"Jan–Jun 2026　·　Revenue = TOTAL New Leads SALES (June in progress)"}</p>
+            <p className="text-xs mt-1" style={{ color: C.sub }}>{"Jan–Jun 2026　·　New Lead Sales = ad-driven new sales · Actual Sales = store actual collection · June in progress"}</p>
           </div>
           <div className="flex items-end gap-3">
             {tab !== "overview" && (
@@ -250,7 +250,7 @@ function Dashboard() {
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={adsT.leads.toLocaleString()} sub={`${"Avg CPL RM"} ${adsT.cpl.toFixed(1)}`} />
           <Kpi icon={CalendarCheck} label={"Appointments"} accent={C.gold} value={hasBranch ? branchT.appt.toLocaleString() : "—"} sub={hasBranch ? `${"Appt rate"} ${pct(branchT.appt, branchT.leads).toFixed(0)}%${" (branch lead basis)"}` : "No branch data"} />
-          <Kpi icon={TrendingUp} label={"Revenue / ROAS"} accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×${" (as of May 26)"}` : "Revenue not entered"} />
+          <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×${" (as of May 26)"}` : "New Lead Sales not entered"} />
         </div>
 
         {/* ---------------- 总览 ---------------- */}
@@ -317,7 +317,7 @@ function Dashboard() {
             {gran === "day" && <AdsDaily rows={dailyAdsRows} scopeLabel={scopeLabel} />}
             {gran === "month" && <>
             <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
-              <Panel title={"Revenue vs Ad Spend"} hint={"Revenue vs ad spend by month (only months with revenue entered)"}>
+              <Panel title={"New Lead Sales vs Ad Spend"} hint={"New Lead Sales vs ad spend by month (only months with sales entered)"}>
                 <ResponsiveContainer width="100%" height={262}>
                   <BarChart data={adsTrend} margin={{ left: -2, right: 6, top: 18 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
@@ -325,7 +325,7 @@ function Dashboard() {
                     <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
                     <Tooltip contentStyle={tip} formatter={(v) => rm(v)} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="sales" name={"Revenue"} fill={C.gold} radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="sales" name={"New Lead Sales"} fill={C.gold} radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="sales" position="top" fontSize={9} fill={C.sub} formatter={lblK} />
                     </Bar>
                     <Bar dataKey="spend" name={"Ad Spend"} fill={C.sageLt} radius={[4, 4, 0, 0]}>
@@ -352,11 +352,11 @@ function Dashboard() {
               </Panel>
             </div>
 
-            <Panel title={"Monthly Ad Detail"} hint={"Revenue = TOTAL New Leads SALES · June in progress, revenue pending"}>
+            <Panel title={"Monthly Ad Detail"} hint={"New Lead Sales = TOTAL New Leads SALES · June in progress"}>
               <div className="overflow-x-auto">
                 <table className="w-full" style={{ fontSize: 13, borderCollapse: "collapse" }}>
                   <thead><tr style={{ color: C.sub, fontSize: 11 }}>
-                    {["Month", "Ad Spend", "Inbox Msgs", "Leads", "CPL", "Revenue", "ROAS"].map((h, i) => (
+                    {["Month", "Ad Spend", "Inbox Msgs", "Leads", "CPL", "New Lead Sales", "ROAS"].map((h, i) => (
                       <th key={h} className="py-2 px-2 font-medium" style={{ textAlign: i === 0 ? "left" : "right", borderBottom: `1px solid ${C.line}` }}>{h}</th>
                     ))}
                   </tr></thead>
