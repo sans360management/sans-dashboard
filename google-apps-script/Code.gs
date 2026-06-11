@@ -14,8 +14,9 @@
 // ⚠️ 改成你自己的随机字符串
 var TOKEN = "CHANGE_ME_to_a_long_random_string";
 
-var ADS_ID   = "1ZiriEdDq4EzTbqKC70CPQXxKVRaR2nkJjkBpq6Utuv0"; // Ads Report
-var LEADS_ID = "1QMqcPyihO-7xABaVvyTHTdU99xuhaDdlGgRhnVNV18A"; // Daily Leads Status
+var ADS_ID    = "1ZiriEdDq4EzTbqKC70CPQXxKVRaR2nkJjkBpq6Utuv0"; // Ads Report
+var LEADS_ID  = "1QMqcPyihO-7xABaVvyTHTdU99xuhaDdlGgRhnVNV18A"; // Daily Leads Status
+var OUTLET_ID = "18Sz-sGUka4MmjpEy4_SvmjcEETSdJqlBI3GESDYiO6w"; // Actual Outlet Sales (每月一个标签页)
 
 var TZ = "Asia/Kuala_Lumpur";
 var SST = 1.06;       // 月度广告花费含 6% SST（日明细为税前）
@@ -165,18 +166,24 @@ function buildData() {
 
   var branches = Object.keys(branchAgg).map(function (b) { return { branch: b, m: branchAgg[b] }; });
 
-  // ----- Actual Outlet Sales（标签页 "Outlet Sales"：Month | Actual Sales | New Lead Sales）-----
+  // ----- Actual Outlet Sales（独立私密表，每月一个标签页 "Jan 2026"…，读每页 TOTAL 行）-----
   var outletSales = [];
-  var osSheet = adsSS.getSheetByName("Outlet Sales");
-  if (osSheet) {
-    osSheet.getDataRange().getValues().slice(1).forEach(function (r) {
-      if (!r[0]) return;
-      var m = (r[0] instanceof Date) ? monthLabel(r[0]) : String(r[0]).trim();
-      var actual = num(r[1]), newLead = num(r[2]);
-      outletSales.push({ m: m, actual: actual, newLead: newLead, other: Math.max(0, actual - newLead) });
+  try {
+    SpreadsheetApp.openById(OUTLET_ID).getSheets().forEach(function (sh) {
+      var m = adsMonth(sh.getName());            // "Jan 2026" -> "Jan 26"（跳过 Yearly Summary 等）
+      if (!m) return;
+      var rows = sh.getDataRange().getValues();
+      for (var i = rows.length - 1; i >= 0; i--) {
+        if (String(rows[i][0]).trim().toUpperCase() === "TOTAL") {
+          var actual = num(rows[i][6]);          // MTD Collection (SW+HG)
+          var newLead = num(rows[i][10]);        // First Course = New Lead Sales
+          outletSales.push({ m: m, actual: actual, newLead: newLead, other: Math.max(0, actual - newLead) });
+          break;
+        }
+      }
     });
     outletSales.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
-  }
+  } catch (e) {}
 
   return {
     ads: ads,
