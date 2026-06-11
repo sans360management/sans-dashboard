@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, ComposedChart,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, LabelList,
 } from "recharts";
 import {
   Wallet, Users, TrendingUp, CalendarCheck,
@@ -27,6 +27,8 @@ let BRANCH_DAILY = {};
 const rm = (n) => "RM " + Math.round(n).toLocaleString();
 const pct = (a, b) => (b > 0 ? (a / b) * 100 : 0);
 const tip = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, fontSize: 12, color: C.ink };
+// 柱标签：货币用 k 缩写避免太长；其余整数；营业额为空(null)返回空串
+const lblK = (v) => (v == null ? "" : Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : Math.round(v));
 
 function Kpi({ icon: Icon, label, value, sub, accent }) {
   return (
@@ -274,14 +276,16 @@ function Dashboard() {
 
               <Panel title={"Ad Spend vs ROAS"} hint={"Bars = monthly ad spend, line = ROAS (New Leads Sales ÷ spend); June revenue pending"}>
                 <ResponsiveContainer width="100%" height={262}>
-                  <ComposedChart data={adsTrend} margin={{ left: -6, right: 6, top: 6 }}>
+                  <ComposedChart data={adsTrend} margin={{ left: -6, right: 6, top: 18 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
                     <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
                     <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tip} formatter={(v, n) => n === "Spend" ? rm(v) : n === "ROAS" ? v + "×" : v} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar yAxisId="l" dataKey="spend" name={"Spend"} fill={C.goldLt} radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="l" dataKey="spend" name={"Spend"} fill={C.goldLt} radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="spend" position="top" fontSize={10} fill={C.sub} formatter={lblK} />
+                    </Bar>
                     <Line yAxisId="r" dataKey="roas" name="ROAS" stroke={C.brown} strokeWidth={2.5} dot={{ r: 2.5, fill: C.brown }} connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -297,7 +301,9 @@ function Dashboard() {
                   <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => "RM" + v} />
                   <Tooltip contentStyle={tip} formatter={(v, n) => n === "CPL" ? "RM " + v.toFixed(1) : v} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar yAxisId="l" dataKey="leads" name="Leads" fill={C.sage} radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="l" dataKey="leads" name="Leads" fill={C.sage} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="leads" position="top" fontSize={10} fill={C.sub} />
+                  </Bar>
                   <Line yAxisId="r" dataKey="cpl" name="CPL" stroke={C.clay} strokeWidth={2.5} dot={{ r: 2.5, fill: C.clay }} />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -313,27 +319,33 @@ function Dashboard() {
             <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
               <Panel title={"Revenue vs Ad Spend"} hint={"Revenue vs ad spend by month (only months with revenue entered)"}>
                 <ResponsiveContainer width="100%" height={262}>
-                  <BarChart data={adsTrend} margin={{ left: -2, right: 6, top: 6 }}>
+                  <BarChart data={adsTrend} margin={{ left: -2, right: 6, top: 18 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
                     <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
                     <Tooltip contentStyle={tip} formatter={(v) => rm(v)} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="sales" name={"Revenue"} fill={C.gold} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="spend" name={"Ad Spend"} fill={C.sageLt} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sales" name={"Revenue"} fill={C.gold} radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="sales" position="top" fontSize={9} fill={C.sub} formatter={lblK} />
+                    </Bar>
+                    <Bar dataKey="spend" name={"Ad Spend"} fill={C.sageLt} radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="spend" position="top" fontSize={9} fill={C.sub} formatter={lblK} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </Panel>
               <Panel title={"Messages → Leads Conversion"} hint={"Bars = Inbox messages, line = msg-to-lead rate"}>
                 <ResponsiveContainer width="100%" height={262}>
-                  <ComposedChart data={adsTrend.map((d) => ({ ...d, conv: pct(d.leads, d.msg) }))} margin={{ left: -8, right: 6, top: 6 }}>
+                  <ComposedChart data={adsTrend.map((d) => ({ ...d, conv: pct(d.leads, d.msg) }))} margin={{ left: -8, right: 6, top: 18 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
                     <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v + "%"} />
                     <Tooltip contentStyle={tip} formatter={(v, n) => n === "Msg to Lead %" ? v.toFixed(0) + "%" : v} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar yAxisId="l" dataKey="msg" name={"Inbox Msgs"} fill={C.blue} radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="l" dataKey="msg" name={"Inbox Msgs"} fill={C.blue} radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="msg" position="top" fontSize={10} fill={C.sub} />
+                    </Bar>
                     <Line yAxisId="r" dataKey="conv" name={"Msg to Lead %"} stroke={C.brown} strokeWidth={2.5} dot={{ r: 2, fill: C.brown }} />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -389,12 +401,13 @@ function Dashboard() {
                   </div>
                 }>
                 <ResponsiveContainer width="100%" height={Math.max(320, sorted.length * 30)}>
-                  <BarChart data={sorted} layout="vertical" margin={{ left: 64, right: 16 }}>
+                  <BarChart data={sorted} layout="vertical" margin={{ left: 64, right: 44 }}>
                     <CartesianGrid stroke={C.line} horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => sortBy === "apptRate" ? v + "%" : v} />
                     <YAxis type="category" dataKey="branch" tick={{ fontSize: 10, fill: C.ink }} width={120} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tip} formatter={(v) => sortBy === "apptRate" ? v.toFixed(1) + "%" : v} />
                     <Bar dataKey={sortBy} name={{ leads: "Leads", appt: "Appt", cancel: "Cancellation", apptRate: "Appt %" }[sortBy]} radius={[0, 5, 5, 0]}>
+                      <LabelList dataKey={sortBy} position="right" offset={6} fontSize={11} fill={C.ink} formatter={(v) => sortBy === "apptRate" ? Math.round(v) + "%" : v} />
                       {sorted.map((_, i) => <Cell key={i} fill={i === 0 ? C.brown : i < 3 ? C.gold : C.sageLt} />)}
                     </Bar>
                   </BarChart>
