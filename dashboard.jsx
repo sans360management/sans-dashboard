@@ -340,7 +340,7 @@ function WinningAds() {
   );
 }
 
-function Dashboard() {
+function Dashboard({ dataVersion }) {
   const [tab, setTab] = useState("overview");
   const [month, setMonth] = useState("ALL");
   const [sortBy, setSortBy] = useState("leads");
@@ -361,19 +361,19 @@ function Dashboard() {
     t.cpl = t.leads ? t.spend / t.leads : 0;
     t.roas = t.salesSpend ? t.sales / t.salesSpend : 0;
     return t;
-  }, [month]);
+  }, [month, dataVersion]);
 
   const actualT = useMemo(() => {
     const rows = OUTLET_SALES.filter((o) => adsActive.includes(o.m));
     const actual = rows.reduce((a, r) => a + (r.actual || 0), 0);
     const newLead = rows.reduce((a, r) => a + (r.newLead || 0), 0);
     return { actual, newLead, other: Math.max(0, actual - newLead), newPct: actual > 0 ? (newLead / actual) * 100 : 0 };
-  }, [month]);
+  }, [month, dataVersion]);
 
   const branchT = useMemo(() => BRANCHES.reduce((a, b) => {
     branchActive.forEach((mo) => { const d = b.m[mo]; if (d) { a.leads += d.leads; a.appt += d.appt; a.cancel += d.cancel; } });
     return a;
-  }, { leads: 0, appt: 0, cancel: 0 }), [month]);
+  }, { leads: 0, appt: 0, cancel: 0 }), [month, dataVersion]);
 
   const adsTrend = ADS.map((a) => ({ name: a.m, spend: a.spend, leads: a.leads, cpl: a.cpl, roas: a.roas, sales: a.sales, msg: a.msg }));
 
@@ -391,12 +391,12 @@ function Dashboard() {
     t.costPerMsg = t.msg ? t.spend / t.msg : 0;
     t.costPerReg = t.reg ? t.spend / t.reg : 0;
     return t;
-  }, [month]);
+  }, [month, dataVersion]);
 
   const branchRows = useMemo(() => BRANCHES.map((b) => {
     const s = branchActive.reduce((a, mo) => { const d = b.m[mo]; if (d) { a.leads += d.leads; a.appt += d.appt; a.cancel += d.cancel; } return a; }, { leads: 0, appt: 0, cancel: 0 });
     return { branch: b.branch, ...s, apptRate: pct(s.appt, s.leads), cancelRate: pct(s.cancel, s.appt) };
-  }).filter((r) => r.leads > 0 || r.appt > 0), [month]);
+  }).filter((r) => r.leads > 0 || r.appt > 0), [month, dataVersion]);
 
   const sorted = useMemo(() => {
     const r = [...branchRows];
@@ -415,7 +415,7 @@ function Dashboard() {
       name: month === "ALL" ? m.split(" ")[0] + "/" + x.d : String(x.d),
       spend: x.spend, leads: x.leads, msg: x.msg, cpl: x.cpl })));
     return out;
-  }, [month]);
+  }, [month, dataVersion]);
   const dailyBranchRows = useMemo(() => {
     const ms = month === "ALL" ? BRANCH_MONTHS : [month];
     const bd = BRANCH_DAILY[selBranch] || {};
@@ -424,7 +424,7 @@ function Dashboard() {
       name: month === "ALL" ? m.split(" ")[0] + "/" + r[0] : String(r[0]),
       leads: r[1], appt: r[2], cancel: r[3] })));
     return out;
-  }, [month, selBranch]);
+  }, [month, selBranch, dataVersion]);
 
   const TABS = [
     { id: "overview", label: "Overview", icon: LayoutGrid },
@@ -828,7 +828,7 @@ export default function App() {
   const [phase, setPhase] = useState("login"); // login | loading | ready | error
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
-  const [version, setVersion] = useState(0);
+  const [dataVersion, setDataVersion] = useState(0);
   const [updatedAt, setUpdatedAt] = useState(null);
   const pwRef = useRef("");
 
@@ -858,7 +858,7 @@ export default function App() {
       pwRef.current = password;
       sessionStorage.setItem(PW_KEY, password);
       setUpdatedAt(new Date());
-      setVersion((v) => v + 1);
+      setDataVersion((d) => d + 1);
       setPhase("ready");
     } catch (e) {
       setErr("Load failed: " + e.message);
@@ -883,7 +883,7 @@ export default function App() {
   if (phase === "ready") {
     return (
       <div>
-        <Dashboard key={version} />
+        <Dashboard dataVersion={dataVersion} />
         <RefreshBar
           updatedAt={updatedAt}
           onRefresh={() => load(pwRef.current, { silent: true })}
