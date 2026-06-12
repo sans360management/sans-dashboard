@@ -1,6 +1,8 @@
 // Vercel Serverless Function: /api/meta-ads
 // 拉 Meta ad 层级数据（指定时间窗口）→ 按目标(messaging/lead)分组、和同组中位数比 → 评级 🟢🟡🔴
 // 密码门控；token 只在服务器端（META_TOKEN / META_AD_ACCOUNT）。
+import { fetchInsightsPaged } from "../lib/meta.js";
+
 const V = "v21.0";
 const av = (actions, t) => { const x = (actions || []).find((y) => y.action_type === t); return x ? Number(x.value) : 0; };
 const median = (arr) => {
@@ -35,8 +37,7 @@ export default async function handler(req, res) {
   try {
     const tr = encodeURIComponent(JSON.stringify({ since, until }));
     const fields = "ad_id,ad_name,campaign_name,spend,impressions,inline_link_clicks,ctr,cpm,actions";
-    const ins = await gj(`https://graph.facebook.com/${V}/${act}/insights?level=ad&fields=${fields}&time_range=${tr}&limit=300&access_token=${encodeURIComponent(token)}`);
-    const rows = ins.data || [];
+    const rows = await fetchInsightsPaged(`https://graph.facebook.com/${V}/${act}/insights?level=ad&fields=${fields}&time_range=${tr}&access_token=${encodeURIComponent(token)}`);
 
     // 批量取 状态 + 缩图（每 50 个一批）
     const ids = rows.map((r) => r.ad_id);
