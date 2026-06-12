@@ -262,6 +262,7 @@ function WinningAds() {
   const [chatInput, setChatInput] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
   const [chatErr, setChatErr] = useState("");
+  const taRef = useRef(null);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
   const load = async (w) => {
@@ -279,6 +280,7 @@ function WinningAds() {
     if (!data || chatBusy || !content || !content.trim()) return;
     const next = [...chat, { role: "user", text: content.trim() }];
     setChat(next); setChatInput(""); setChatBusy(true); setChatErr("");
+    if (taRef.current) taRef.current.style.height = "auto";
     try {
       const trend = (META || []).slice(-3).map((x) => ({ m: x.m, cpm: x.cpm, freq: x.freq }));
       const tot = (OUTLET_SALES || []).reduce((a, o) => { a.act += o.actual || 0; a.nl += o.newLead || 0; return a; }, { act: 0, nl: 0 });
@@ -323,10 +325,12 @@ function WinningAds() {
             {chatBusy && <div style={{ alignSelf: "flex-start", color: C.sub, fontSize: 12 }}>思考中…（约 10–30 秒）</div>}
           </div>
           {chatErr && <div style={{ color: C.clay, fontSize: 12, marginTop: 8 }}>{chatErr}</div>}
-          <form onSubmit={(e) => { e.preventDefault(); send(chatInput); }} style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} disabled={chatBusy}
-              placeholder="继续问，例如：口播7 为什么赢？KL 哪条 LP 该关？"
-              style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 13, outline: "none" }} />
+          <form onSubmit={(e) => { e.preventDefault(); send(chatInput); }} style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "flex-end" }}>
+            <textarea ref={taRef} rows={1} value={chatInput} onChange={(e) => setChatInput(e.target.value)} disabled={chatBusy}
+              onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(chatInput); } }}
+              placeholder="继续问，例如：口播7 为什么赢？（Enter 发送，Shift+Enter 换行）"
+              style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 13, lineHeight: 1.5, outline: "none", resize: "none", overflowY: "auto", maxHeight: 140 }} />
             <button type="submit" disabled={chatBusy || !chatInput.trim()}
               style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: (chatBusy || !chatInput.trim()) ? 0.5 : 1 }}>Send</button>
           </form>
