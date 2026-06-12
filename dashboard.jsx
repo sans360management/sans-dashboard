@@ -295,7 +295,7 @@ function WinningAds() {
   const ads = (data && data.ads) || [];
   const winners = (obj) => ads.filter((a) => a.objective === obj && a.eligible && a.costPerResult != null).sort((a, b) => a.costPerResult - b.costPerResult).slice(0, 6);
   const live = ads.filter((a) => a.active).sort((a, b) => (a.objective < b.objective ? -1 : a.objective > b.objective ? 1 : (a.costPerResult || 1e9) - (b.costPerResult || 1e9)));
-  const cardGrid = { gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" };
+  const cardGrid = { gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" };
 
   return (
     <div className="grid gap-5">
@@ -453,7 +453,7 @@ function Dashboard({ dataVersion }) {
 
   return (
     <div style={{ background: C.sand, minHeight: "100vh", color: C.ink, fontFamily: "'Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif" }}>
-      <div className="mx-auto px-5 py-7" style={{ maxWidth: 1180 }}>
+      <div className="mx-auto px-3 sm:px-5 py-5 sm:py-7 pb-24" style={{ maxWidth: 1180 }}>
 
         <header className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>
@@ -461,7 +461,7 @@ function Dashboard({ dataVersion }) {
             <h1 className="font-semibold" style={{ fontSize: 19 }}>{"Marketing Dashboard"}</h1>
             <p className="text-xs mt-1" style={{ color: C.sub }}>{"Jan–Jun 2026　·　New Lead Sales = ad-driven new sales · Actual Sales = store actual collection · June in progress"}</p>
           </div>
-          <div className="flex items-end gap-3">
+          <div className="flex flex-wrap items-end gap-3">
             {tab !== "overview" && (
             <div>
               <label className="block text-xs mb-1" style={{ color: C.sub }}>{"View"}</label>
@@ -487,11 +487,11 @@ function Dashboard({ dataVersion }) {
           </div>
         </header>
 
-        <div className="flex gap-1 mb-6 p-1 rounded-xl w-fit" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+        <div className="flex gap-1 mb-6 p-1 rounded-xl overflow-x-auto no-scrollbar w-full sm:w-fit" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
           {TABS.map((t) => {
             const on = tab === t.id;
             return (
-              <button key={t.id} onClick={() => setTab(t.id)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+              <button key={t.id} onClick={() => setTab(t.id)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shrink-0 whitespace-nowrap"
                 style={{ background: on ? C.brown : "transparent", color: on ? "#fff" : C.sub }}>
                 <t.icon size={15} /> {t.label}
               </button>

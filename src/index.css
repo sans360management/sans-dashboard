@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* 隐藏横向滚动条（标签栏在手机上可横滑但不显示滚动条） */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
