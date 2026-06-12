@@ -129,6 +129,102 @@ function BranchDaily({ branch, setBranch, rows, scopeLabel }) {
   );
 }
 
+/* 上传月度 Daily Sales Report PDF → 自动解析 → 写进私密表（每月一次） */
+const OS_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((x) => x + " 26");
+function UploadSales() {
+  const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState("");
+  const [file, setFile] = useState(null);
+  const [phase, setPhase] = useState("idle"); // idle | parsing | parsed | saving | done | error
+  const [detected, setDetected] = useState(null);
+  const [err, setErr] = useState("");
+  const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
+
+  const reset = () => { setPhase("idle"); setDetected(null); setErr(""); };
+  const post = (payload) => fetch("/api/upload-sales", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: pw(), ...payload }),
+  });
+
+  const parse = async () => {
+    if (!file || !month) { setErr("请先选月份和 PDF 文件"); setPhase("error"); return; }
+    setPhase("parsing"); setErr("");
+    try {
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
+      const resp = await post({ action: "parse", pdfBase64: b64 });
+      const j = await resp.json();
+      if (!resp.ok) throw new Error(j.error || ("HTTP " + resp.status));
+      setDetected(j); setPhase("parsed");
+    } catch (e) { setErr(e.message); setPhase("error"); }
+  };
+
+  const save = async () => {
+    setPhase("saving"); setErr("");
+    try {
+      const resp = await post({ action: "save", month, actual: detected.actual, newLead: detected.newLead });
+      const j = await resp.json();
+      if (!resp.ok) throw new Error(j.error || ("HTTP " + resp.status));
+      setPhase("done");
+      setTimeout(() => window.location.reload(), 1300);
+    } catch (e) { setErr(e.message); setPhase("error"); }
+  };
+
+  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 20 };
+  const btn = (bg, on) => ({ border: "none", background: bg, color: "#fff", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: on ? "pointer" : "default", opacity: on ? 1 : 0.5 });
+
+  if (!open) {
+    return (
+      <div style={box}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Update Outlet Sales</div>
+            <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>Upload the month-end Daily Sales Report PDF — auto-parsed, no manual entry</div>
+          </div>
+          <button onClick={() => setOpen(true)} style={btn(C.brown, true)}>Upload PDF</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={box}>
+      <div className="flex items-center justify-between mb-3">
+        <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Update Outlet Sales</div>
+        <button onClick={() => { setOpen(false); reset(); }} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>close</button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 12 }}>
+        <select value={month} onChange={(e) => { setMonth(e.target.value); reset(); }}
+          style={{ background: C.sand, border: `1px solid ${C.line}`, color: C.ink, borderRadius: 10, padding: "8px 12px", fontSize: 13, outline: "none" }}>
+          <option value="">Select month…</option>
+          {OS_MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <input type="file" accept="application/pdf" onChange={(e) => { setFile(e.target.files[0]); reset(); }}
+          style={{ fontSize: 12, color: C.sub }} />
+        <button onClick={parse} disabled={phase === "parsing" || !file || !month} style={btn(C.sage, phase !== "parsing" && !!file && !!month)}>
+          {phase === "parsing" ? "Parsing…" : "Parse"}
+        </button>
+      </div>
+
+      {detected && (phase === "parsed" || phase === "saving" || phase === "done") && (
+        <div style={{ background: C.sand, borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.ink }}>
+          <div style={{ marginBottom: 8 }}>
+            Detected for <b>{month}</b> — Actual Sales <b>{rm(detected.actual)}</b> · New Lead Sales <b>{rm(detected.newLead)}</b>
+          </div>
+          {phase === "done"
+            ? <div style={{ color: C.sage, fontWeight: 600 }}>Saved ✓ refreshing…</div>
+            : <div className="flex gap-2">
+                <button onClick={save} disabled={phase === "saving"} style={btn(C.brown, phase !== "saving")}>{phase === "saving" ? "Saving…" : "Confirm & Save"}</button>
+                <button onClick={reset} style={{ border: `1px solid ${C.line}`, background: "transparent", color: C.sub, borderRadius: 10, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              </div>}
+        </div>
+      )}
+
+      {err && <div style={{ color: C.clay, fontSize: 12, marginTop: 8 }}>{err}</div>}
+    </div>
+  );
+}
+
 function Dashboard() {
   const [tab, setTab] = useState("overview");
   const [month, setMonth] = useState("ALL");
@@ -335,6 +431,8 @@ function Dashboard() {
               </ResponsiveContainer>
             </Panel>
             )}
+
+            <UploadSales />
           </div>
         )}
 

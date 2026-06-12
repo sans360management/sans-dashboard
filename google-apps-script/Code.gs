@@ -35,6 +35,28 @@ function doGet(e) {
   }
 }
 
+// 接收 dashboard 上传的月度 Outlet Sales（写进 Ads 表的 "Outlet Upload" 标签页，按月去重）
+function doPost(e) {
+  try {
+    if (!e || !e.parameter || e.parameter.token !== TOKEN) return json({ error: "unauthorized" });
+    var body = JSON.parse((e.postData && e.postData.contents) || "{}");
+    var month = String(body.month || "").trim();
+    if (!month) return json({ error: "missing month" });
+    var actual = Number(body.actual) || 0, newLead = Number(body.newLead) || 0;
+    var ss = SpreadsheetApp.openById(ADS_ID);
+    var sh = ss.getSheetByName("Outlet Upload");
+    if (!sh) { sh = ss.insertSheet("Outlet Upload"); sh.appendRow(["Month", "Actual Sales", "New Lead Sales"]); }
+    var data = sh.getDataRange().getValues();
+    var rowIdx = -1;
+    for (var i = 1; i < data.length; i++) { if (String(data[i][0]).trim() === month) { rowIdx = i + 1; break; } }
+    if (rowIdx > 0) sh.getRange(rowIdx, 1, 1, 3).setValues([[month, actual, newLead]]);
+    else sh.appendRow([month, actual, newLead]);
+    return json({ ok: true, month: month });
+  } catch (err) {
+    return json({ error: String(err) });
+  }
+}
+
 function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
@@ -184,6 +206,19 @@ function buildData() {
     });
     outletSales.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
   } catch (e) {}
+
+  // 合并 dashboard 上传的月份（"Outlet Upload" 标签页），只补 live 表里还没有的月份
+  var upSheet = adsSS.getSheetByName("Outlet Upload");
+  if (upSheet) {
+    upSheet.getDataRange().getValues().slice(1).forEach(function (r) {
+      if (!r[0]) return;
+      var m = String(r[0]).trim();
+      if (outletSales.some(function (o) { return o.m === m; })) return;
+      var actual = num(r[1]), newLead = num(r[2]);
+      outletSales.push({ m: m, actual: actual, newLead: newLead, other: Math.max(0, actual - newLead) });
+    });
+    outletSales.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
+  }
 
   return {
     ads: ads,
