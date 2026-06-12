@@ -285,8 +285,13 @@ function WinningAds() {
       const trend = (META || []).slice(-3).map((x) => ({ m: x.m, cpm: x.cpm, freq: x.freq }));
       const tot = (OUTLET_SALES || []).reduce((a, o) => { a.act += o.actual || 0; a.nl += o.newLead || 0; return a; }, { act: 0, nl: 0 });
       const newPct = tot.act ? (tot.nl / tot.act) * 100 : null;
+      const monthly = {
+        ads: (ADS || []).map((a) => ({ m: a.m, spend: a.spend, leads: a.leads, msg: a.msg, sales: a.sales, roas: a.roas })),
+        meta: (META || []).map((x) => ({ m: x.m, spend: x.spend, cpm: x.cpm, freq: x.freq })),
+        outlet: (OUTLET_SALES || []).map((o) => ({ m: o.m, actual: o.actual, newLead: o.newLead })),
+      };
       const r = await fetch("/api/ad-insights", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: pw(), window: data.window, ads: data.ads, medians: data.medians, trend, newPct, messages: next.map((m) => ({ role: m.role, content: m.text })) }) });
+        body: JSON.stringify({ password: pw(), window: data.window, ads: data.ads, medians: data.medians, trend, newPct, monthly, messages: next.map((m) => ({ role: m.role, content: m.text })) }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
       setChat((c) => [...c, { role: "assistant", text: j.text || "" }]);
@@ -317,7 +322,7 @@ function WinningAds() {
       {phase === "error" && <Panel title={"Winning Ads"}><p className="text-sm" style={{ color: C.clay }}>{err}</p></Panel>}
 
       {(chat.length > 0 || chatBusy) && (
-        <Panel title={"AI 广告助手"} hint={"基于当前窗口的广告数据 · 可继续追问 · 仅供参考"}>
+        <Panel title={"AI 广告助手"} hint={"可问任意月份/时段——它会自动去 Meta 拉数据 · 可继续追问 · 仅供参考"}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 440, overflowY: "auto", paddingRight: 4 }}>
             {chat.map((m, i) => (
               <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "86%", background: m.role === "user" ? C.brown : C.sand, color: m.role === "user" ? "#fff" : C.ink, borderRadius: 12, padding: "8px 12px", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.text}</div>
@@ -329,7 +334,7 @@ function WinningAds() {
             <textarea ref={taRef} rows={1} value={chatInput} onChange={(e) => setChatInput(e.target.value)} disabled={chatBusy}
               onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(chatInput); } }}
-              placeholder="继续问，例如：口播7 为什么赢？（Enter 发送，Shift+Enter 换行）"
+              placeholder="例如：5 月 ZF1 整月花了多少？上个月账号 ROAS？（Enter 发送，Shift+Enter 换行）"
               style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 13, lineHeight: 1.5, outline: "none", resize: "none", overflowY: "auto", maxHeight: 140 }} />
             <button type="submit" disabled={chatBusy || !chatInput.trim()}
               style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: (chatBusy || !chatInput.trim()) ? 0.5 : 1 }}>Send</button>
