@@ -23,6 +23,7 @@ let ADS = [], BRANCHES = [], ADS_MONTHS = [], BRANCH_MONTHS = [];
 let ADS_DAILY = {};
 let BRANCH_DAILY = {};
 let OUTLET_SALES = [];
+let META = [];
 
 /* ----------------------------- 工具 ----------------------------- */
 const rm = (n) => "RM " + Math.round(n).toLocaleString();
@@ -262,6 +263,22 @@ function Dashboard() {
 
   const adsTrend = ADS.map((a) => ({ name: a.m, spend: a.spend, leads: a.leads, cpl: a.cpl, roas: a.roas, sales: a.sales, msg: a.msg }));
 
+  const metaTrend = META.map((x) => ({ ...x, name: x.m }));
+  const metaT = useMemo(() => {
+    const rows = META.filter((x) => adsActive.includes(x.m));
+    const t = rows.reduce((a, r) => {
+      a.spend += r.spend; a.impr += r.impr; a.clicks += r.clicks; a.reach += r.reach;
+      a.msg += r.msg; a.comment += r.comment; a.reg += r.reg; a.leads += r.leads;
+      return a;
+    }, { spend: 0, impr: 0, clicks: 0, reach: 0, msg: 0, comment: 0, reg: 0, leads: 0 });
+    t.ctr = t.impr ? (t.clicks / t.impr) * 100 : 0;
+    t.cpm = t.impr ? (t.spend / t.impr) * 1000 : 0;
+    t.freq = t.reach ? t.impr / t.reach : 0;
+    t.costPerMsg = t.msg ? t.spend / t.msg : 0;
+    t.costPerReg = t.reg ? t.spend / t.reg : 0;
+    return t;
+  }, [month]);
+
   const branchRows = useMemo(() => BRANCHES.map((b) => {
     const s = branchActive.reduce((a, mo) => { const d = b.m[mo]; if (d) { a.leads += d.leads; a.appt += d.appt; a.cancel += d.cancel; } return a; }, { leads: 0, appt: 0, cancel: 0 });
     return { branch: b.branch, ...s, apptRate: pct(s.appt, s.leads), cancelRate: pct(s.cancel, s.appt) };
@@ -299,6 +316,7 @@ function Dashboard() {
     { id: "overview", label: "Overview", icon: LayoutGrid },
     { id: "ads", label: "Ads", icon: Megaphone },
     { id: "ops", label: "Branches", icon: Building2 },
+    { id: "meta", label: "Meta Ads", icon: TrendingUp },
   ];
 
   return (
@@ -567,8 +585,107 @@ function Dashboard() {
           </div>
         )}
 
+        {/* ---------------- Meta Ads ---------------- */}
+        {tab === "meta" && (
+          <div className="grid gap-5">
+            {META.length === 0 ? (
+              <Panel title={"Meta Ads"}>
+                <p className="text-sm" style={{ color: C.sub }}>{"Not connected yet. Set META_TOKEN + META_AD_ACCOUNT in Vercel to pull live Meta Ads data."}</p>
+              </Panel>
+            ) : (<>
+              <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}>
+                <Kpi icon={Wallet} label={"Spend (Meta)"} accent={C.brown} value={rm(metaT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
+                <Kpi icon={Megaphone} label={"Messaging"} accent={C.blue} value={metaT.msg.toLocaleString()} sub={`Cost/msg RM ${metaT.costPerMsg.toFixed(1)}`} />
+                <Kpi icon={Users} label={"Registrations"} accent={C.sage} value={metaT.reg.toLocaleString()} sub={`Cost/reg RM ${metaT.costPerReg.toFixed(0)}`} />
+                <Kpi icon={TrendingUp} label={"CTR"} accent={C.gold} value={metaT.ctr.toFixed(2) + "%"} sub={"link click-through"} />
+                <Kpi icon={TrendingUp} label={"CPM"} accent={C.clay} value={"RM " + metaT.cpm.toFixed(1)} sub={"cost / 1000 impressions"} />
+                <Kpi icon={Users} label={"Frequency"} accent={C.brown} value={metaT.freq.toFixed(2)} sub={metaT.freq >= 4 ? "high — fatigue risk" : "healthy"} />
+              </div>
+
+              <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
+                <Panel title={"Spend & CTR"} hint={"Bars = monthly spend (Meta) · line = CTR%"}>
+                  <ResponsiveContainer width="100%" height={262}>
+                    <ComposedChart data={metaTrend} margin={{ left: -6, right: 6, top: 18 }}>
+                      <CartesianGrid stroke={C.line} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
+                      <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v + "%"} />
+                      <Tooltip contentStyle={tip} formatter={(v, n) => n === "CTR" ? v.toFixed(2) + "%" : rm(v)} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar yAxisId="l" dataKey="spend" name={"Spend"} fill={C.goldLt} radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="spend" position="top" fontSize={10} fill={C.sub} formatter={lblK} />
+                      </Bar>
+                      <Line yAxisId="r" dataKey="ctr" name="CTR" stroke={C.brown} strokeWidth={2.5} dot={{ r: 2.5, fill: C.brown }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </Panel>
+
+                <Panel title={"Messaging & cost per conversation"} hint={"Bars = messaging conversations · line = cost per conversation (RM)"}>
+                  <ResponsiveContainer width="100%" height={262}>
+                    <ComposedChart data={metaTrend} margin={{ left: -6, right: 6, top: 18 }}>
+                      <CartesianGrid stroke={C.line} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => "RM" + v} />
+                      <Tooltip contentStyle={tip} formatter={(v, n) => n === "Cost/msg" ? "RM " + v.toFixed(1) : v} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar yAxisId="l" dataKey="msg" name={"Messaging"} fill={C.blue} radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="msg" position="top" fontSize={10} fill={C.sub} />
+                      </Bar>
+                      <Line yAxisId="r" dataKey="costPerMsg" name="Cost/msg" stroke={C.clay} strokeWidth={2.5} dot={{ r: 2.5, fill: C.clay }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </Panel>
+              </div>
+
+              <Panel title={"Frequency & CPM — ad fatigue watch"} hint={"Frequency >4 with rising CPM = audience fatigue → refresh creative / widen audience"}>
+                <ResponsiveContainer width="100%" height={262}>
+                  <ComposedChart data={metaTrend} margin={{ left: -6, right: 6, top: 6 }}>
+                    <CartesianGrid stroke={C.line} vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="l" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => "RM" + v} />
+                    <Tooltip contentStyle={tip} formatter={(v, n) => n === "CPM" ? "RM " + v.toFixed(1) : v.toFixed(2)} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar yAxisId="r" dataKey="cpm" name="CPM" fill={C.sageLt} radius={[4, 4, 0, 0]} />
+                    <Line yAxisId="l" dataKey="freq" name="Frequency" stroke={C.brown} strokeWidth={2.5} dot={{ r: 2.5, fill: C.brown }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </Panel>
+
+              <Panel title={"Meta vs manual — sanity check"} hint={"Meta auto-pulled vs your Ads Report. Spend & messages should match; Total Lead stays manual (includes Messenger-qualified)"}>
+                <div className="overflow-x-auto">
+                  <table className="w-full" style={{ fontSize: 13, borderCollapse: "collapse" }}>
+                    <thead><tr style={{ color: C.sub, fontSize: 11 }}>
+                      {["Month", "Spend (Meta)", "Spend (manual)", "Msg (Meta)", "Msg (manual)", "Total Lead (manual)"].map((h, i) => (
+                        <th key={h} className="py-2 px-2 font-medium" style={{ textAlign: i === 0 ? "left" : "right", borderBottom: `1px solid ${C.line}` }}>{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {metaTrend.map((mt) => {
+                        const a = ADS.find((x) => x.m === mt.m) || {};
+                        return (
+                          <tr key={mt.m} style={{ borderBottom: `1px solid ${C.line}` }}>
+                            <td className="py-2 px-2" style={{ fontWeight: 500 }}>{mt.m}</td>
+                            <td className="py-2 px-2 text-right">{rm(mt.spend)}</td>
+                            <td className="py-2 px-2 text-right" style={{ color: C.sub }}>{a.spend != null ? rm(a.spend) : "—"}</td>
+                            <td className="py-2 px-2 text-right">{mt.msg.toLocaleString()}</td>
+                            <td className="py-2 px-2 text-right" style={{ color: C.sub }}>{a.msg != null ? a.msg.toLocaleString() : "—"}</td>
+                            <td className="py-2 px-2 text-right" style={{ fontWeight: 600 }}>{a.leads != null ? a.leads.toLocaleString() : "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs mt-3" style={{ color: C.sub }}>{"Manual spend includes 6% SST (Meta is pre-tax), so it's ~6% higher. Landing-page registrations are auto from Meta Pixel; Messenger-qualified leads stay manual."}</p>
+              </Panel>
+            </>)}
+          </div>
+        )}
+
         <footer className="text-center mt-8 text-xs" style={{ color: C.sub }}>
-          {"Source: Ads Report (daily ads) · All Branch Lead Report (daily branch Leads / Appt / Cancellation) — Google Drive"}
+          {"Source: Ads Report (daily ads) · All Branch Lead Report (daily branch Leads / Appt / Cancellation) · Meta Marketing API — Google Drive + Meta"}
         </footer>
       </div>
     </div>
@@ -583,6 +700,7 @@ function applyData(d) {
   ADS_DAILY = d.adsDaily || {};
   BRANCH_DAILY = d.branchDaily || {};
   OUTLET_SALES = d.outletSales || [];
+  META = d.meta || [];
 }
 
 const PW_KEY = "sans_dash_pw";
