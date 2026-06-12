@@ -226,6 +226,120 @@ function UploadSales() {
   );
 }
 
+/* ----------------------------- Winning Ads (Meta ad-level) ----------------------------- */
+const AD_WINDOWS = [3, 7, 14, 30];
+const badgeColor = (b) => (b === "good" ? C.sage : b === "poor" ? C.clay : C.gold);
+const badgeText = (b) => (b === "good" ? "Good" : b === "poor" ? "Underperforming" : "OK");
+
+function AdCard({ a }) {
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 10, display: "flex", gap: 10 }}>
+      {a.thumb
+        ? <img src={a.thumb} alt="" loading="lazy" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: C.sand }} />
+        : <div style={{ width: 56, height: 56, borderRadius: 8, background: C.sand, flexShrink: 0 }} />}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 12, color: C.ink, fontWeight: 600, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.name}>{a.name}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+          {a.badge && <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: badgeColor(a.badge), borderRadius: 999, padding: "1px 7px" }}>{badgeText(a.badge)}</span>}
+          <span style={{ fontSize: 10, color: a.active ? C.sage : C.sub }}>{a.active ? "● ACTIVE" : "PAUSED"}</span>
+        </div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>
+          {a.objective === "messaging" ? "Cost/msg " : a.objective === "lead" ? "Cost/reg " : "Cost "}
+          <b style={{ color: C.brown }}>{a.costPerResult != null ? rm(a.costPerResult) : "—"}</b>
+          {`　CTR ${(+a.ctr).toFixed(2)}%　Spend ${rm(a.spend)}`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WinningAds() {
+  const [win, setWin] = useState(30);
+  const [data, setData] = useState(null);
+  const [phase, setPhase] = useState("idle");
+  const [err, setErr] = useState("");
+  const [ai, setAi] = useState({ phase: "idle", text: "", err: "" });
+  const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
+
+  const load = async (w) => {
+    setPhase("loading"); setErr(""); setAi({ phase: "idle", text: "", err: "" });
+    try {
+      const r = await fetch("/api/meta-ads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw(), window: w }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      setData(j); setPhase("ready");
+    } catch (e) { setErr(e.message); setPhase("error"); }
+  };
+  useEffect(() => { load(win); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [win]);
+
+  const analyze = async () => {
+    if (!data) return;
+    setAi({ phase: "loading", text: "", err: "" });
+    try {
+      const trend = (META || []).slice(-3).map((x) => ({ m: x.m, cpm: x.cpm, freq: x.freq }));
+      const tot = (OUTLET_SALES || []).reduce((a, o) => { a.act += o.actual || 0; a.nl += o.newLead || 0; return a; }, { act: 0, nl: 0 });
+      const newPct = tot.act ? (tot.nl / tot.act) * 100 : null;
+      const r = await fetch("/api/ad-insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw(), window: data.window, ads: data.ads, medians: data.medians, trend, newPct }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      setAi({ phase: "ready", text: j.text || "", err: "" });
+    } catch (e) { setAi({ phase: "error", text: "", err: e.message }); }
+  };
+
+  const ads = (data && data.ads) || [];
+  const winners = (obj) => ads.filter((a) => a.objective === obj && a.eligible && a.costPerResult != null).sort((a, b) => a.costPerResult - b.costPerResult).slice(0, 6);
+  const live = ads.filter((a) => a.active).sort((a, b) => (a.objective < b.objective ? -1 : a.objective > b.objective ? 1 : (a.costPerResult || 1e9) - (b.costPerResult || 1e9)));
+  const cardGrid = { gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" };
+
+  return (
+    <div className="grid gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+          {AD_WINDOWS.map((w) => (
+            <button key={w} onClick={() => setWin(w)} className="px-3 py-1.5 rounded-lg text-sm font-medium" style={{ background: win === w ? C.brown : "transparent", color: win === w ? "#fff" : C.sub }}>{"Last " + w + "d"}</button>
+          ))}
+        </div>
+        <button onClick={analyze} disabled={phase !== "ready" || ai.phase === "loading"}
+          style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: (phase !== "ready" || ai.phase === "loading") ? 0.5 : 1 }}>
+          {ai.phase === "loading" ? "Analyzing…" : "Analyze with AI"}
+        </button>
+      </div>
+
+      {phase === "loading" && <Panel title={"Winning Ads"}><p className="text-sm" style={{ color: C.sub }}>Loading Meta ads…</p></Panel>}
+      {phase === "error" && <Panel title={"Winning Ads"}><p className="text-sm" style={{ color: C.clay }}>{err}</p></Panel>}
+
+      {ai.phase !== "idle" && (
+        <Panel title={"AI optimization advice"} hint={"Generated by Claude from the data in the selected window · for reference"}>
+          {ai.phase === "loading" && <p className="text-sm" style={{ color: C.sub }}>Analyzing… (10–30s)</p>}
+          {ai.phase === "error" && <p className="text-sm" style={{ color: C.clay }}>{ai.err}</p>}
+          {ai.phase === "ready" && <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: C.ink, lineHeight: 1.6 }}>{ai.text}</div>}
+        </Panel>
+      )}
+
+      {phase === "ready" && (<>
+        <Panel title={"Winning Ads · Messaging"} hint={`Last ${data.window}d · ranked by cost per messaging conversation · median ${data.medians.messaging ? rm(data.medians.messaging) : "—"}`}>
+          <div className="grid gap-3" style={cardGrid}>
+            {winners("messaging").map((a) => <AdCard key={a.id} a={a} />)}
+            {winners("messaging").length === 0 && <p className="text-sm" style={{ color: C.sub }}>Not enough data in this window.</p>}
+          </div>
+        </Panel>
+        <Panel title={"Winning Ads · Landing Page"} hint={`Last ${data.window}d · ranked by cost per registration · median ${data.medians.lead ? rm(data.medians.lead) : "—"}`}>
+          <div className="grid gap-3" style={cardGrid}>
+            {winners("lead").map((a) => <AdCard key={a.id} a={a} />)}
+            {winners("lead").length === 0 && <p className="text-sm" style={{ color: C.sub }}>Not enough data in this window.</p>}
+          </div>
+        </Panel>
+        <Panel title={"Live Ads (currently running)"} hint={`${live.length} active ads · sorted by performance within objective · green = good, red = review`}>
+          <div className="grid gap-3" style={cardGrid}>
+            {live.map((a) => <AdCard key={a.id} a={a} />)}
+            {live.length === 0 && <p className="text-sm" style={{ color: C.sub }}>No active ads in this window.</p>}
+          </div>
+        </Panel>
+      </>)}
+    </div>
+  );
+}
+
 function Dashboard() {
   const [tab, setTab] = useState("overview");
   const [month, setMonth] = useState("ALL");
@@ -317,6 +431,7 @@ function Dashboard() {
     { id: "ads", label: "Ads", icon: Megaphone },
     { id: "ops", label: "Branches", icon: Building2 },
     { id: "meta", label: "Meta Ads", icon: TrendingUp },
+    { id: "winners", label: "Winning Ads", icon: Megaphone },
   ];
 
   return (
@@ -683,6 +798,9 @@ function Dashboard() {
             </>)}
           </div>
         )}
+
+        {/* ---------------- Winning Ads ---------------- */}
+        {tab === "winners" && <WinningAds />}
 
         <footer className="text-center mt-8 text-xs" style={{ color: C.sub }}>
           {"Source: Ads Report (daily ads) · All Branch Lead Report (daily branch Leads / Appt / Cancellation) · Meta Marketing API — Google Drive + Meta"}
