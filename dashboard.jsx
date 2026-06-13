@@ -301,6 +301,19 @@ function SalesView({ dataVersion }) {
   useMemo(() => { if (days.length && !days.find((d) => d.date === day)) setDay(days[0].date); }, [days]); // default newest
   const sel = days.find((d) => d.date === day) || days[0] || null;
 
+  // 顶部 5 张卡片（跟随选中的一天）。Today Sales/MTD 直接取；三个"Today"是当天净增=当天累计−前一天累计。
+  const kpi = useMemo(() => {
+    if (!sel) return null;
+    const mk = sel.date.slice(0, 7);
+    const prev = days
+      .filter((x) => x.date < sel.date && x.date.slice(0, 7) === mk)
+      .reduce((a, b) => (!a || b.date > a.date ? b : a), null);
+    const isFirst = sel.date.slice(8, 10) === "01"; // 当月 1 号：MTD 即当天
+    const delta = (f) => (isFirst ? sel.total[f] : prev ? sel.total[f] - prev.total[f] : null);
+    return { date: sel.date, today: sel.total.today, mtd: sel.total.mtd, first: delta("first"), consult: delta("consult"), enrol: delta("enrol") };
+  }, [days, day]);
+  const intOrDash = (v) => (v != null ? Math.round(v).toLocaleString() : "—");
+
   // 月度行：来自 OUTLET_SALES（MTD Collection=actual / First Course=newLead）；
   // Consultation/Enrolment 从该月最新一天的逐日合计补充（目前仅 6 月有逐日）
   const monthly = useMemo(() => {
@@ -333,6 +346,15 @@ function SalesView({ dataVersion }) {
 
   return (
     <div className="grid gap-5">
+      {kpi && (
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
+          <Kpi icon={Wallet} label={"Today Sales"} accent={C.brown} value={rm(kpi.today)} sub={"as of " + fmtDay(kpi.date)} />
+          <Kpi icon={Building2} label={"Month to Date Total Sales"} accent={C.sage} value={rm(kpi.mtd)} sub={"MTD Collection (SW+HG)"} />
+          <Kpi icon={TrendingUp} label={"Today New Leads Sales"} accent={C.clay} value={kpi.first != null ? rm(kpi.first) : "—"} sub={kpi.first != null ? "First Course · new today" : "needs previous day"} />
+          <Kpi icon={Users} label={"Today Consultation"} accent={C.gold} value={intOrDash(kpi.consult)} sub={kpi.consult != null ? "new today" : "needs previous day"} />
+          <Kpi icon={CalendarCheck} label={"Today Enrollment"} accent={C.brown} value={intOrDash(kpi.enrol)} sub={kpi.enrol != null ? "new today" : "needs previous day"} />
+        </div>
+      )}
       <Panel
         title={"Outlet Sales"}
         hint={mode === "day"
@@ -653,7 +675,8 @@ function Dashboard({ dataVersion }) {
           })}
         </div>
 
-        {/* KPI 行 */}
+        {/* KPI 行（Sales 页用它自己的卡片，见 SalesView） */}
+        {tab !== "sales" && (
         <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={adsT.leads.toLocaleString()} sub={`${"Avg CPL RM"} ${adsT.cpl.toFixed(1)}`} />
@@ -661,6 +684,7 @@ function Dashboard({ dataVersion }) {
           <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×${" (as of May 26)"}` : "New Lead Sales not entered"} />
           <Kpi icon={Building2} label={"Actual Sales"} accent={C.brown} value={actualT.actual ? rm(actualT.actual) : "—"} sub={actualT.actual ? `New-lead share ${actualT.newPct.toFixed(0)}% · MTD Collection` : "No outlet data yet"} />
         </div>
+        )}
 
         {/* ---------------- 总览 ---------------- */}
         {tab === "overview" && (
