@@ -70,7 +70,7 @@ function saveDaily(body) {
   var sh = ss.getSheetByName("Daily Sales");
   if (!sh) { sh = ss.insertSheet("Daily Sales"); sh.appendRow(["Date", "Branch", "Today", "MTD", "Consultation", "Enrolment", "FirstCourse"]); }
   var data = sh.getDataRange().getValues();
-  for (var i = data.length - 1; i >= 1; i--) { if (String(data[i][0]).trim() === date) sh.deleteRow(i + 1); }
+  for (var i = data.length - 1; i >= 1; i--) { if (ymd(data[i][0]) === date) sh.deleteRow(i + 1); }
   var rows = branches.map(function (b) {
     return [date, String(b.branch || ""), num(b.today), num(b.mtd), num(b.consult), num(b.enrol), num(b.first)];
   });
@@ -90,6 +90,13 @@ function num(v) {
   var s = String(v).replace(/[^0-9.\-]/g, "");
   var n = parseFloat(s);
   return isNaN(n) ? 0 : n;
+}
+// 规整日期成 "YYYY-MM-DD"（Sheets 可能把日期格存成 Date 对象）
+function ymd(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, TZ, "yyyy-MM-dd");
+  var s = String(v).trim();
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (m[1] + "-" + m[2] + "-" + m[3]) : s;
 }
 function dayOf(v) {
   if (v instanceof Date) return Number(Utilities.formatDate(v, TZ, "d"));
@@ -248,7 +255,7 @@ function buildData() {
     var dvals = dsh.getDataRange().getValues();
     var byDate = {};
     for (var di = 1; di < dvals.length; di++) {
-      var dr = dvals[di], date = String(dr[0]).trim();
+      var dr = dvals[di], date = ymd(dr[0]);
       if (!date) continue;
       (byDate[date] = byDate[date] || []).push({
         branch: String(dr[1]).trim(), today: num(dr[2]), mtd: num(dr[3]),

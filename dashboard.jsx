@@ -240,10 +240,21 @@ const SALES_COLS = [
   { key: "first", label: "First Course", money: true },
 ];
 const enrolPct = (r) => (r.consult > 0 ? (r.enrol / r.consult) * 100 : 0);
+const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MNUM = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+// 规整成 "YYYY-MM-DD"：接受 "2026-06-11" 或 Sheets 转出的 "Thu Jun 11 2026 00:00:00 GMT+0800 …"
+const normDate = (s) => {
+  s = String(s);
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  m = s.match(/\b([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{4})/); // "Jun 11 2026"
+  if (m && MNUM[m[1]]) return m[3] + "-" + String(MNUM[m[1]]).padStart(2, "0") + "-" + String(+m[2]).padStart(2, "0");
+  return s;
+};
+const fmtDay = (iso) => { const [y, m, d] = String(iso).split("-"); return m ? `${+d} ${MON3[(+m) - 1]} ${y}` : iso; }; // "11 Jun 2026"
 const fmtMonthKey = (iso) => { // "2026-06" -> "Jun 26"
-  const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const [y, m] = String(iso).split("-");
-  return M[(+m) - 1] + " " + String(y).slice(2);
+  return MON3[(+m) - 1] + " " + String(y).slice(2);
 };
 
 function SalesTable({ rows, total, showToday, firstColLabel }) {
@@ -337,7 +348,7 @@ function SalesView({ dataVersion }) {
                 <select value={day} onChange={(e) => setDay(e.target.value)}
                   className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
                   style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
-                  {days.map((d) => <option key={d.date} value={d.date}>{d.date}</option>)}
+                  {days.map((d) => <option key={d.date} value={d.date}>{fmtDay(d.date)}</option>)}
                 </select>
                 <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
               </div>
@@ -979,7 +990,7 @@ function applyData(d) {
   ADS_DAILY = d.adsDaily || {};
   BRANCH_DAILY = d.branchDaily || {};
   OUTLET_SALES = d.outletSales || [];
-  DAILY_SALES = d.dailySales || [];
+  DAILY_SALES = (d.dailySales || []).map((x) => ({ ...x, date: normDate(x.date) }));
   META = d.meta || [];
 }
 
