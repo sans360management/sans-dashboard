@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import {
   Wallet, Users, TrendingUp, CalendarCheck,
-  LayoutGrid, Megaphone, Building2, ChevronDown,
+  LayoutGrid, Megaphone, Building2, ChevronDown, Store,
 } from "lucide-react";
 
 /* ----------------------------- 品牌色板 ----------------------------- */
@@ -23,6 +23,7 @@ let ADS = [], BRANCHES = [], ADS_MONTHS = [], BRANCH_MONTHS = [];
 let ADS_DAILY = {};
 let BRANCH_DAILY = {};
 let OUTLET_SALES = [];
+let DAILY_SALES = [];
 let META = [];
 
 /* ----------------------------- 工具 ----------------------------- */
@@ -130,41 +131,47 @@ function BranchDaily({ branch, setBranch, rows, scopeLabel }) {
   );
 }
 
-/* 上传月度 Daily Sales Report PDF → 自动解析 → 写进私密表（每月一次） */
-const OS_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((x) => x + " 26");
+/* 上传每日 Daily Sales Report PDF（可多选）→ 按坐标解析每个分店 → 按日期写进私密表 */
 function UploadSales() {
   const [open, setOpen] = useState(false);
-  const [month, setMonth] = useState("");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [phase, setPhase] = useState("idle"); // idle | parsing | parsed | saving | done | error
-  const [detected, setDetected] = useState(null);
+  const [results, setResults] = useState([]); // [{date,total,n,branches}]
   const [err, setErr] = useState("");
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
-  const reset = () => { setPhase("idle"); setDetected(null); setErr(""); };
+  const reset = () => { setPhase("idle"); setResults([]); setErr(""); };
   const post = (payload) => fetch("/api/upload-sales", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password: pw(), ...payload }),
   });
+  const toB64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
 
   const parse = async () => {
-    if (!file || !month) { setErr("请先选月份和 PDF 文件"); setPhase("error"); return; }
+    if (!files.length) { setErr("请先选择 PDF 文件"); setPhase("error"); return; }
     setPhase("parsing"); setErr("");
     try {
-      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
-      const resp = await post({ action: "parse", pdfBase64: b64 });
-      const j = await resp.json();
-      if (!resp.ok) throw new Error(j.error || ("HTTP " + resp.status));
-      setDetected(j); setPhase("parsed");
+      const out = [];
+      for (const f of files) {
+        const b64 = await toB64(f);
+        const resp = await post({ action: "parse-daily", pdfBase64: b64 });
+        const j = await resp.json();
+        if (!resp.ok) throw new Error((f.name || "PDF") + "：" + (j.error || ("HTTP " + resp.status)));
+        out.push({ date: j.date, total: j.total, n: j.branches.length, branches: j.branches });
+      }
+      out.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      setResults(out); setPhase("parsed");
     } catch (e) { setErr(e.message); setPhase("error"); }
   };
 
   const save = async () => {
     setPhase("saving"); setErr("");
     try {
-      const resp = await post({ action: "save", month, actual: detected.actual, newLead: detected.newLead });
-      const j = await resp.json();
-      if (!resp.ok) throw new Error(j.error || ("HTTP " + resp.status));
+      for (const r of results) {
+        const resp = await post({ action: "save-daily", date: r.date, branches: r.branches });
+        const j = await resp.json();
+        if (!resp.ok) throw new Error(r.date + "：" + (j.error || ("HTTP " + resp.status)));
+      }
       setPhase("done");
       setTimeout(() => window.location.reload(), 1300);
     } catch (e) { setErr(e.message); setPhase("error"); }
@@ -178,8 +185,8 @@ function UploadSales() {
       <div style={box}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Update Outlet Sales</div>
-            <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>Upload the month-end Daily Sales Report PDF — auto-parsed, no manual entry</div>
+            <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Upload Daily Sales Report</div>
+            <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>Upload each day's Sales Report PDF — date auto-detected, every branch parsed. You can select multiple PDFs at once.</div>
           </div>
           <button onClick={() => setOpen(true)} style={btn(C.brown, true)}>Upload PDF</button>
         </div>
@@ -190,38 +197,164 @@ function UploadSales() {
   return (
     <div style={box}>
       <div className="flex items-center justify-between mb-3">
-        <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Update Outlet Sales</div>
-        <button onClick={() => { setOpen(false); reset(); }} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>close</button>
+        <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Upload Daily Sales Report</div>
+        <button onClick={() => { setOpen(false); reset(); setFiles([]); }} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>close</button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 12 }}>
-        <select value={month} onChange={(e) => { setMonth(e.target.value); reset(); }}
-          style={{ background: C.sand, border: `1px solid ${C.line}`, color: C.ink, borderRadius: 10, padding: "8px 12px", fontSize: 13, outline: "none" }}>
-          <option value="">Select month…</option>
-          {OS_MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
-        <input type="file" accept="application/pdf" onChange={(e) => { setFile(e.target.files[0]); reset(); }}
+        <input type="file" accept="application/pdf" multiple onChange={(e) => { setFiles(Array.from(e.target.files || [])); reset(); }}
           style={{ fontSize: 12, color: C.sub }} />
-        <button onClick={parse} disabled={phase === "parsing" || !file || !month} style={btn(C.sage, phase !== "parsing" && !!file && !!month)}>
-          {phase === "parsing" ? "Parsing…" : "Parse"}
+        <button onClick={parse} disabled={phase === "parsing" || !files.length} style={btn(C.sage, phase !== "parsing" && !!files.length)}>
+          {phase === "parsing" ? "Parsing…" : (files.length > 1 ? `Parse ${files.length} files` : "Parse")}
         </button>
       </div>
 
-      {detected && (phase === "parsed" || phase === "saving" || phase === "done") && (
+      {results.length > 0 && (phase === "parsed" || phase === "saving" || phase === "done") && (
         <div style={{ background: C.sand, borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.ink }}>
-          <div style={{ marginBottom: 8 }}>
-            Detected for <b>{month}</b> — Actual Sales <b>{rm(detected.actual)}</b> · New Lead Sales <b>{rm(detected.newLead)}</b>
-          </div>
+          {results.map((r) => (
+            <div key={r.date} style={{ marginBottom: 6 }}>
+              <b>{r.date}</b> · {r.n} branches · MTD Collection <b>{rm(r.total.mtd)}</b> · First Course <b>{rm(r.total.first)}</b>
+            </div>
+          ))}
           {phase === "done"
-            ? <div style={{ color: C.sage, fontWeight: 600 }}>Saved ✓ refreshing…</div>
-            : <div className="flex gap-2">
-                <button onClick={save} disabled={phase === "saving"} style={btn(C.brown, phase !== "saving")}>{phase === "saving" ? "Saving…" : "Confirm & Save"}</button>
+            ? <div style={{ color: C.sage, fontWeight: 600, marginTop: 4 }}>Saved ✓ refreshing…</div>
+            : <div className="flex gap-2" style={{ marginTop: 8 }}>
+                <button onClick={save} disabled={phase === "saving"} style={btn(C.brown, phase !== "saving")}>{phase === "saving" ? "Saving…" : (results.length > 1 ? `Confirm & Save ${results.length} days` : "Confirm & Save")}</button>
                 <button onClick={reset} style={{ border: `1px solid ${C.line}`, background: "transparent", color: C.sub, borderRadius: 10, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Cancel</button>
               </div>}
         </div>
       )}
 
       {err && <div style={{ color: C.clay, fontSize: 12, marginTop: 8 }}>{err}</div>}
+    </div>
+  );
+}
+
+/* ----------------------------- Sales（门店销售：逐日 / 月度） ----------------------------- */
+const SALES_COLS = [
+  { key: "today", label: "Today Collection", money: true, dayOnly: true },
+  { key: "mtd", label: "MTD Collection", money: true },
+  { key: "consult", label: "Consultation", money: false },
+  { key: "enrol", label: "Enrolment", money: false },
+  { key: "pct", label: "Enrolment %", money: false, pct: true },
+  { key: "first", label: "First Course", money: true },
+];
+const enrolPct = (r) => (r.consult > 0 ? (r.enrol / r.consult) * 100 : 0);
+const fmtMonthKey = (iso) => { // "2026-06" -> "Jun 26"
+  const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [y, m] = String(iso).split("-");
+  return M[(+m) - 1] + " " + String(y).slice(2);
+};
+
+function SalesTable({ rows, total, showToday, firstColLabel }) {
+  const cols = SALES_COLS.filter((c) => showToday || !c.dayOnly);
+  const cell = (r, c) => {
+    if (c.pct) return enrolPct(r).toFixed(1) + "%";
+    if (c.money) return r[c.key] != null ? rm(r[c.key]) : "—";
+    return r[c.key] != null ? Math.round(r[c.key]).toLocaleString() : "—";
+  };
+  const th = { textAlign: "right", padding: "9px 12px", fontSize: 12, color: C.sub, fontWeight: 600, whiteSpace: "nowrap", borderBottom: `1px solid ${C.line}` };
+  const td = { textAlign: "right", padding: "9px 12px", fontSize: 13, color: C.ink, whiteSpace: "nowrap" };
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+        <thead>
+          <tr>
+            <th style={{ ...th, textAlign: "left" }}>{firstColLabel || "Branch"}</th>
+            {cols.map((c) => <th key={c.key} style={th}>{c.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.branch || r.label || i} style={{ background: i % 2 ? "transparent" : C.sand + "66" }}>
+              <td style={{ ...td, textAlign: "left", fontWeight: 500 }}>{r.branch || r.label}</td>
+              {cols.map((c) => <td key={c.key} style={td}>{cell(r, c)}</td>)}
+            </tr>
+          ))}
+          {total && (
+            <tr style={{ borderTop: `2px solid ${C.line}` }}>
+              <td style={{ ...td, textAlign: "left", fontWeight: 700, color: C.brown }}>TOTAL</td>
+              {cols.map((c) => <td key={c.key} style={{ ...td, fontWeight: 700, color: C.brown }}>{cell(total, c)}</td>)}
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SalesView({ dataVersion }) {
+  const [mode, setMode] = useState("day"); // day | month
+  const days = useMemo(() => (DAILY_SALES || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))), [dataVersion]);
+  const [day, setDay] = useState("");
+  useMemo(() => { if (days.length && !days.find((d) => d.date === day)) setDay(days[0].date); }, [days]); // default newest
+  const sel = days.find((d) => d.date === day) || days[0] || null;
+
+  // 月度行：来自 OUTLET_SALES（MTD Collection=actual / First Course=newLead）；
+  // Consultation/Enrolment 从该月最新一天的逐日合计补充（目前仅 6 月有逐日）
+  const monthly = useMemo(() => {
+    const dailyByMonth = {};
+    (DAILY_SALES || []).forEach((d) => {
+      const mk = fmtMonthKey(String(d.date).slice(0, 7));
+      const cur = dailyByMonth[mk];
+      if (!cur || String(d.date) > cur.date) dailyByMonth[mk] = { date: String(d.date), total: d.total };
+    });
+    const rows = (OUTLET_SALES || []).map((o) => {
+      const d = dailyByMonth[o.m];
+      return {
+        label: o.m, mtd: o.actual, first: o.newLead,
+        consult: d ? d.total.consult : null, enrol: d ? d.total.enrol : null,
+      };
+    });
+    const total = rows.reduce((a, r) => ({
+      mtd: a.mtd + (r.mtd || 0), first: a.first + (r.first || 0),
+      consult: a.consult + (r.consult || 0), enrol: a.enrol + (r.enrol || 0),
+    }), { mtd: 0, first: 0, consult: 0, enrol: 0 });
+    return { rows, total };
+  }, [dataVersion]);
+
+  const tabBtn = (id, label) => (
+    <button onClick={() => setMode(id)} style={{
+      border: "none", borderRadius: 9, padding: "7px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+      background: mode === id ? C.brown : "transparent", color: mode === id ? "#fff" : C.sub,
+    }}>{label}</button>
+  );
+
+  return (
+    <div className="grid gap-5">
+      <Panel
+        title={"Outlet Sales"}
+        hint={mode === "day"
+          ? "Per-branch daily figures from the uploaded Sales Report (SW+HG combined)"
+          : "Monthly totals · Consultation/Enrolment shown for months with daily reports (Jun onward)"}
+        right={
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 2, padding: 3, borderRadius: 11, background: C.sand, border: `1px solid ${C.line}` }}>
+              {tabBtn("day", "By Day")}{tabBtn("month", "By Month")}
+            </div>
+            {mode === "day" && days.length > 0 && (
+              <div className="relative">
+                <select value={day} onChange={(e) => setDay(e.target.value)}
+                  className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
+                  style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
+                  {days.map((d) => <option key={d.date} value={d.date}>{d.date}</option>)}
+                </select>
+                <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
+              </div>
+            )}
+          </div>
+        }
+      >
+        {mode === "day"
+          ? (sel
+              ? <SalesTable rows={sel.branches} total={sel.total} showToday firstColLabel="Branch" />
+              : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No daily reports yet. Upload a Daily Sales Report PDF below to populate this view.</div>)
+          : (monthly.rows.length
+              ? <SalesTable rows={monthly.rows} total={monthly.total} showToday={false} firstColLabel="Month" />
+              : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No monthly sales data yet.</div>)}
+      </Panel>
+
+      <UploadSales />
     </div>
   );
 }
@@ -454,6 +587,7 @@ function Dashboard({ dataVersion }) {
 
   const TABS = [
     { id: "overview", label: "Overview", icon: LayoutGrid },
+    { id: "sales", label: "Sales", icon: Store },
     { id: "ads", label: "Ads", icon: Megaphone },
     { id: "ops", label: "Branches", icon: Building2 },
     { id: "meta", label: "Meta Ads", icon: TrendingUp },
@@ -590,10 +724,11 @@ function Dashboard({ dataVersion }) {
               </ResponsiveContainer>
             </Panel>
             )}
-
-            <UploadSales />
           </div>
         )}
+
+        {/* ---------------- 门店销售 Sales ---------------- */}
+        {tab === "sales" && <SalesView dataVersion={dataVersion} />}
 
         {/* ---------------- 广告投放 ---------------- */}
         {tab === "ads" && (
@@ -844,6 +979,7 @@ function applyData(d) {
   ADS_DAILY = d.adsDaily || {};
   BRANCH_DAILY = d.branchDaily || {};
   OUTLET_SALES = d.outletSales || [];
+  DAILY_SALES = d.dailySales || [];
   META = d.meta || [];
 }
 

@@ -35,11 +35,15 @@ function doGet(e) {
   }
 }
 
-// 接收 dashboard 上传的月度 Outlet Sales（写进 Ads 表的 "Outlet Upload" 标签页，按月去重）
+// 接收 dashboard 上传的数据：
+//   1) 逐日（body.daily）：每个分店一行写进 "Daily Sales" 标签页，按日期去重
+//   2) 月度（旧）：写进 "Outlet Upload" 标签页，按月去重
 function doPost(e) {
   try {
     if (!e || !e.parameter || e.parameter.token !== TOKEN) return json({ error: "unauthorized" });
     var body = JSON.parse((e.postData && e.postData.contents) || "{}");
+    if (body.daily) return saveDaily(body);
+
     var month = String(body.month || "").trim();
     if (!month) return json({ error: "missing month" });
     var actual = Number(body.actual) || 0, newLead = Number(body.newLead) || 0;
@@ -55,6 +59,23 @@ function doPost(e) {
   } catch (err) {
     return json({ error: String(err) });
   }
+}
+
+// 逐日：把某日期所有分店行写进 "Daily Sales"（先删该日期旧行，再整批写入）
+function saveDaily(body) {
+  var date = String(body.date || "").trim();
+  var branches = body.branches || [];
+  if (!date || !branches.length) return json({ error: "missing date/branches" });
+  var ss = SpreadsheetApp.openById(ADS_ID);
+  var sh = ss.getSheetByName("Daily Sales");
+  if (!sh) { sh = ss.insertSheet("Daily Sales"); sh.appendRow(["Date", "Branch", "Today", "MTD", "Consultation", "Enrolment", "FirstCourse"]); }
+  var data = sh.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) { if (String(data[i][0]).trim() === date) sh.deleteRow(i + 1); }
+  var rows = branches.map(function (b) {
+    return [date, String(b.branch || ""), num(b.today), num(b.mtd), num(b.consult), num(b.enrol), num(b.first)];
+  });
+  if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+  return json({ ok: true, date: date, branches: rows.length });
 }
 
 function json(obj) {
@@ -220,6 +241,29 @@ function buildData() {
     outletSales.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
   }
 
+  // ----- 逐日门店销售（"Daily Sales" 标签页，每个分店一行）-----
+  var dailySales = [];
+  var dsh = adsSS.getSheetByName("Daily Sales");
+  if (dsh) {
+    var dvals = dsh.getDataRange().getValues();
+    var byDate = {};
+    for (var di = 1; di < dvals.length; di++) {
+      var dr = dvals[di], date = String(dr[0]).trim();
+      if (!date) continue;
+      (byDate[date] = byDate[date] || []).push({
+        branch: String(dr[1]).trim(), today: num(dr[2]), mtd: num(dr[3]),
+        consult: num(dr[4]), enrol: num(dr[5]), first: num(dr[6])
+      });
+    }
+    dailySales = Object.keys(byDate).sort().map(function (date) {
+      var bs = byDate[date].sort(function (a, b) { return b.mtd - a.mtd; });
+      var total = bs.reduce(function (a, b) {
+        return { today: a.today + b.today, mtd: a.mtd + b.mtd, consult: a.consult + b.consult, enrol: a.enrol + b.enrol, first: a.first + b.first };
+      }, { today: 0, mtd: 0, consult: 0, enrol: 0, first: 0 });
+      return { date: date, branches: bs, total: total };
+    });
+  }
+
   return {
     ads: ads,
     adsMonths: adsMonths,
@@ -227,6 +271,7 @@ function buildData() {
     branches: branches,
     adsDaily: adsDaily,
     branchDaily: branchDaily,
-    outletSales: outletSales
+    outletSales: outletSales,
+    dailySales: dailySales
   };
 }
