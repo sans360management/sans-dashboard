@@ -1,8 +1,12 @@
 // Vercel Serverless Function: /api/upload-sales
 // 月度（旧）：action "parse"/"save" —— 解析月末 PDF 的 MTD Collection + First Course，按月写表。
 // 逐日（新）：action "parse-daily"/"save-daily" —— 按坐标解析每日 Sales Report 的每个分店 6 列数据，按日期写表。
+// 截图（新）：action "parse-image" —— 用 Claude 视觉识别图片里的报表，TOTAL 行自动核对。
 // 密码门控；不持久化任何金额在本函数。
 import pdf from "pdf-parse/lib/pdf-parse.js";
+import Anthropic from "@anthropic-ai/sdk";
+
+export const config = { maxDuration: 60 };
 
 const M = (s) => parseFloat(String(s).replace(/,/g, "")) || 0;
 
@@ -112,6 +116,90 @@ function parseDailyReport(items) {
 }
 function emptyTotal() { return { today: 0, mtd: 0, consult: 0, enrol: 0, first: 0 }; }
 
+/* ---------- 截图：Claude 视觉识别 + TOTAL 行核对 ---------- */
+const REPORT_TOOL = {
+  name: "report_data",
+  description: "从 Daily Sales Report 图片中提取的结构化数据。",
+  input_schema: {
+    type: "object",
+    properties: {
+      date: { type: "string", description: "报表日期 YYYY-MM-DD（取图上 'Printed on: D Month YYYY'）" },
+      branches: {
+        type: "array",
+        description: "每个分店一行（不含底部 TOTAL 行）",
+        items: {
+          type: "object",
+          properties: {
+            branch: { type: "string", description: "分店名（Outlet 列，如 'Mahkota Cheras'、'Kota Damansara 2'）" },
+            today: { type: "number", description: "Today Collection (SW+HG) 金额" },
+            mtd: { type: "number", description: "MTD Collection (SW+HG) 金额" },
+            consult: { type: "number", description: "Consultation 整数" },
+            enrol: { type: "number", description: "Enrolment 整数" },
+            first: { type: "number", description: "First Course 金额" },
+          },
+          required: ["branch", "today", "mtd", "consult", "enrol", "first"],
+        },
+      },
+      printedTotal: {
+        type: "object",
+        description: "底部 TOTAL 行（用于核对）。读不到就省略。",
+        properties: {
+          today: { type: "number" }, mtd: { type: "number" }, consult: { type: "number" }, enrol: { type: "number" }, first: { type: "number" },
+        },
+      },
+    },
+    required: ["date", "branches"],
+  },
+};
+
+const VISION_PROMPT = `这是一份 Sans Wellness 的 "Daily Sales Report" 表格截图。请把它读成结构化数据，只用 report_data 工具输出。
+表格每个分店一行，数字列从左到右依次是：Today Collection(SW)、MTD Collection(SW)、Today Collection(HG)、MTD Collection(HG)、Today Collection(SW+HG)、MTD Collection(SW+HG)、Consultation、Enrolment、Enrolment %、First Course。
+- 每个分店只取 **SW+HG 合并列**：today=Today Collection(SW+HG)、mtd=MTD Collection(SW+HG)；以及 consult=Consultation、enrol=Enrolment、first=First Course。不要 Enrolment %。
+- consult、enrol 是整数（顾客人数）；today、mtd、first 是金额（去掉千分位逗号，保留小数）。
+- 分店名照抄 Outlet 列（含末尾数字，如 "Kota Damansara 2"、"Nusa Bestari 2"、"Puchong 2"）。把所有分店行都列出（包括数字为 0 的）。
+- date 取顶部 "Printed on: D Month YYYY"，转成 YYYY-MM-DD。
+- 底部 "TOTAL" 那一行单独放进 printedTotal（同样取 SW+HG 的 today/mtd + consult/enrol/first）。
+务必逐格仔细看准数字，不要漏行或串列。`;
+
+function totalsClose(a, b) {
+  if (!a || !b) return null;
+  const moneyOk = (x, y) => Math.abs((Number(x) || 0) - (Number(y) || 0)) <= 1;
+  const intOk = (x, y) => Math.round(Number(x) || 0) === Math.round(Number(y) || 0);
+  return moneyOk(a.today, b.today) && moneyOk(a.mtd, b.mtd) && intOk(a.consult, b.consult) && intOk(a.enrol, b.enrol) && moneyOk(a.first, b.first);
+}
+
+async function parseImageReport(imageBase64, mediaType) {
+  const client = new Anthropic();
+  const msg = await client.messages.create({
+    model: "claude-opus-4-8",
+    max_tokens: 1800,
+    tools: [REPORT_TOOL],
+    tool_choice: { type: "tool", name: "report_data" },
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "base64", media_type: mediaType, data: imageBase64 } },
+        { type: "text", text: VISION_PROMPT },
+      ],
+    }],
+  });
+  const tu = (msg.content || []).find((b) => b.type === "tool_use");
+  if (!tu) throw new Error("AI 未能识别表格，请换一张更清晰/完整的截图，或改用 PDF");
+  const inp = tu.input || {};
+  const branches = (Array.isArray(inp.branches) ? inp.branches : []).map((b) => ({
+    branch: String(b.branch || "").trim(),
+    today: Number(b.today) || 0, mtd: Number(b.mtd) || 0,
+    consult: Math.round(Number(b.consult) || 0), enrol: Math.round(Number(b.enrol) || 0),
+    first: Number(b.first) || 0,
+  })).filter((b) => b.branch);
+  const computedTotal = branches.reduce((a, b) => ({
+    today: a.today + b.today, mtd: a.mtd + b.mtd, consult: a.consult + b.consult, enrol: a.enrol + b.enrol, first: a.first + b.first,
+  }), emptyTotal());
+  const printedTotal = inp.printedTotal || null;
+  const ok = totalsClose(computedTotal, printedTotal);
+  return { date: inp.date || null, branches, total: computedTotal, check: { ok, printedTotal, computedTotal } };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
 
@@ -131,6 +219,18 @@ export default async function handler(req, res) {
       const r = parseDailyReport(items);
       if (!r.date) { res.status(422).json({ error: "无法识别报表日期（找不到 'Printed on: …'），请确认是 Daily Sales Report" }); return; }
       if (!r.branches.length) { res.status(422).json({ error: "无法解析出任何分店行，请确认 PDF 格式" }); return; }
+      res.status(200).json(r);
+      return;
+    }
+
+    // ---- 截图：用 Claude 视觉识别 ----
+    if (body.action === "parse-image") {
+      if (!body.imageBase64) { res.status(400).json({ error: "缺少图片" }); return; }
+      if (!process.env.ANTHROPIC_API_KEY) { res.status(500).json({ error: "AI 未配置：请在 Vercel 加环境变量 ANTHROPIC_API_KEY" }); return; }
+      const mediaType = /^image\/(png|jpeg|jpg|webp|gif)$/.test(body.mediaType || "") ? body.mediaType.replace("image/jpg", "image/jpeg") : "image/png";
+      const r = await parseImageReport(body.imageBase64, mediaType);
+      if (!r.date) { res.status(422).json({ error: "无法识别报表日期，请确认截图含顶部 'Printed on: …'，或改用 PDF" }); return; }
+      if (!r.branches.length) { res.status(422).json({ error: "无法识别出任何分店行，请换更清晰/完整的截图，或改用 PDF" }); return; }
       res.status(200).json(r);
       return;
     }

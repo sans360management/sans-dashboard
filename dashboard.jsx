@@ -148,16 +148,19 @@ function UploadSales() {
   const toB64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
 
   const parse = async () => {
-    if (!files.length) { setErr("请先选择 PDF 文件"); setPhase("error"); return; }
+    if (!files.length) { setErr("请先选择 PDF 或截图"); setPhase("error"); return; }
     setPhase("parsing"); setErr("");
     try {
       const out = [];
       for (const f of files) {
         const b64 = await toB64(f);
-        const resp = await post({ action: "parse-daily", pdfBase64: b64 });
+        const isPdf = f.type === "application/pdf";
+        const resp = await post(isPdf
+          ? { action: "parse-daily", pdfBase64: b64 }
+          : { action: "parse-image", imageBase64: b64, mediaType: f.type || "image/png" });
         const j = await resp.json();
-        if (!resp.ok) throw new Error((f.name || "PDF") + "：" + (j.error || ("HTTP " + resp.status)));
-        out.push({ date: j.date, total: j.total, n: j.branches.length, branches: j.branches });
+        if (!resp.ok) throw new Error((f.name || (isPdf ? "PDF" : "图片")) + "：" + (j.error || ("HTTP " + resp.status)));
+        out.push({ date: j.date, total: j.total, n: j.branches.length, branches: j.branches, check: j.check || null });
       }
       out.sort((a, b) => String(a.date).localeCompare(String(b.date)));
       setResults(out); setPhase("parsed");
@@ -186,9 +189,9 @@ function UploadSales() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Upload Daily Sales Report</div>
-            <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>Upload each day's Sales Report PDF — date auto-detected, every branch parsed. You can select multiple PDFs at once.</div>
+            <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>PDF or screenshot — date auto-detected, every branch parsed. PDF is exact &amp; free; screenshots use AI (a few cents each) and are auto-checked against the TOTAL row. Multiple files at once OK.</div>
           </div>
-          <button onClick={() => setOpen(true)} style={btn(C.brown, true)}>Upload PDF</button>
+          <button onClick={() => setOpen(true)} style={btn(C.brown, true)}>Upload</button>
         </div>
       </div>
     );
@@ -202,7 +205,7 @@ function UploadSales() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 12 }}>
-        <input type="file" accept="application/pdf" multiple onChange={(e) => { setFiles(Array.from(e.target.files || [])); reset(); }}
+        <input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple onChange={(e) => { setFiles(Array.from(e.target.files || [])); reset(); }}
           style={{ fontSize: 12, color: C.sub }} />
         <button onClick={parse} disabled={phase === "parsing" || !files.length} style={btn(C.sage, phase !== "parsing" && !!files.length)}>
           {phase === "parsing" ? "Parsing…" : (files.length > 1 ? `Parse ${files.length} files` : "Parse")}
@@ -213,7 +216,18 @@ function UploadSales() {
         <div style={{ background: C.sand, borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.ink }}>
           {results.map((r) => (
             <div key={r.date} style={{ marginBottom: 6 }}>
-              <b>{r.date}</b> · {r.n} branches · MTD Collection <b>{rm(r.total.mtd)}</b> · First Course <b>{rm(r.total.first)}</b>
+              <div>
+                <b>{r.date}</b> · {r.n} branches · MTD Collection <b>{rm(r.total.mtd)}</b> · First Course <b>{rm(r.total.first)}</b>
+                {r.check && r.check.ok === true && <span style={{ color: C.sage, marginLeft: 6 }}>✓ AI 已核对</span>}
+              </div>
+              {r.check && r.check.ok === false && (
+                <div style={{ color: C.clay, fontSize: 12, marginTop: 2 }}>
+                  ⚠️ 合计核对不一致(加总 {rm(r.check.computedTotal.mtd)} vs 报表 {r.check.printedTotal ? rm(r.check.printedTotal.mtd) : "—"})——请核对数字,或改用 PDF 更稳。
+                </div>
+              )}
+              {r.check && r.check.ok === null && (
+                <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>截图未含 TOTAL 行,无法自动核对,请自行确认数字。</div>
+              )}
             </div>
           ))}
           {phase === "done"
