@@ -138,6 +138,8 @@ function UploadSales() {
   const [phase, setPhase] = useState("idle"); // idle | parsing | parsed | saving | done | error
   const [results, setResults] = useState([]); // [{date,total,n,branches}]
   const [err, setErr] = useState("");
+  const filesRef = useRef([]);
+  useEffect(() => { filesRef.current = files; }, [files]);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
   const reset = () => { setPhase("idle"); setResults([]); setErr(""); };
@@ -147,12 +149,37 @@ function UploadSales() {
   });
   const toB64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
 
-  const parse = async () => {
-    if (!files.length) { setErr("请先选择 PDF 或截图"); setPhase("error"); return; }
+  // 收到一批新文件（粘贴 / 拖拽 / 选择）→ 追加并自动解析
+  const addAndParse = (incoming) => {
+    const fs = Array.from(incoming || []).filter((f) => f && (f.type === "application/pdf" || f.type.startsWith("image/")));
+    if (!fs.length) return;
+    const merged = [...filesRef.current, ...fs];
+    filesRef.current = merged;
+    setFiles(merged);
+    parse(merged);
+  };
+
+  // 面板打开时，支持直接 Ctrl+V 粘贴截图
+  useEffect(() => {
+    if (!open) return;
+    const onPaste = (e) => {
+      const imgs = [];
+      for (const it of (e.clipboardData && e.clipboardData.items) || []) {
+        if (it.kind === "file" && it.type.startsWith("image/")) { const f = it.getAsFile(); if (f) imgs.push(f); }
+      }
+      if (imgs.length) { e.preventDefault(); addAndParse(imgs); }
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const parse = async (list = filesRef.current) => {
+    if (!list.length) { setErr("请先选择 PDF 或截图"); setPhase("error"); return; }
     setPhase("parsing"); setErr("");
     try {
       const out = [];
-      for (const f of files) {
+      for (const f of list) {
         const b64 = await toB64(f);
         const isPdf = f.type === "application/pdf";
         const resp = await post(isPdf
@@ -202,6 +229,13 @@ function UploadSales() {
       <div className="flex items-center justify-between mb-3">
         <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>Upload Daily Sales Report</div>
         <button onClick={() => { setOpen(false); reset(); setFiles([]); }} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>close</button>
+      </div>
+
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); addAndParse(e.dataTransfer.files); }}
+        style={{ border: `1.5px dashed ${C.line}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, textAlign: "center", color: C.sub, fontSize: 13, background: C.sand + "66" }}>
+        把截图<b style={{ color: C.ink }}>拖到这里</b>,或按 <b style={{ color: C.ink }}>Ctrl + V</b> 粘贴 · 也可点下面"选择文件"
       </div>
 
       <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 12 }}>
