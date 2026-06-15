@@ -142,6 +142,7 @@ function UploadSales() {
   const [results, setResults] = useState([]); // [{date,total,n,branches}]
   const [err, setErr] = useState("");
   const filesRef = useRef([]);
+  const inputRef = useRef(null);
   useEffect(() => { filesRef.current = files; }, [files]);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
@@ -234,20 +235,17 @@ function UploadSales() {
         <button onClick={() => { setOpen(false); reset(); setFiles([]); }} style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>close</button>
       </div>
 
+      {/* 点击=打开相册/文件(手机直接进相册);也支持拖拽 / Ctrl+V */}
       <div
+        onClick={() => inputRef.current && inputRef.current.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); addAndParse(e.dataTransfer.files); }}
-        style={{ border: `1.5px dashed ${C.line}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, textAlign: "center", color: C.sub, fontSize: 13, background: C.sand + "66" }}>
-        把截图<b style={{ color: C.ink }}>拖到这里</b>,或按 <b style={{ color: C.ink }}>Ctrl + V</b> 粘贴 · 也可点下面"选择文件"
+        style={{ border: `1.5px dashed ${C.line}`, borderRadius: 12, padding: "20px 16px", marginBottom: 12, textAlign: "center", background: C.sand + "66", cursor: "pointer" }}>
+        <div style={{ color: C.ink, fontWeight: 600, fontSize: 14 }}>{phase === "parsing" ? "解析中…" : "点这里选图(相册 / 拍照)或 PDF"}</div>
+        <div style={{ color: C.sub, fontSize: 12, marginTop: 3 }}>手机:打开相册选截图　·　电脑:可拖拽 / 按 Ctrl+V 粘贴</div>
       </div>
-
-      <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 12 }}>
-        <input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple onChange={(e) => { setFiles(Array.from(e.target.files || [])); reset(); }}
-          style={{ fontSize: 12, color: C.sub }} />
-        <button onClick={parse} disabled={phase === "parsing" || !files.length} style={btn(C.sage, phase !== "parsing" && !!files.length)}>
-          {phase === "parsing" ? "Parsing…" : (files.length > 1 ? `Parse ${files.length} files` : "Parse")}
-        </button>
-      </div>
+      <input ref={inputRef} type="file" accept="image/*,application/pdf" multiple style={{ display: "none" }}
+        onChange={(e) => { addAndParse(e.target.files); e.target.value = ""; }} />
 
       {results.length > 0 && (phase === "parsed" || phase === "saving" || phase === "done") && (
         <div style={{ background: C.sand, borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.ink }}>
@@ -318,30 +316,61 @@ function SalesTable({ rows, total, showToday, firstColLabel }) {
   const th = { textAlign: "right", padding: "9px 12px", fontSize: 12, color: C.sub, fontWeight: 600, whiteSpace: "nowrap", borderBottom: `1px solid ${C.line}` };
   const td = { textAlign: "right", padding: "9px 12px", fontSize: 13, color: C.ink, whiteSpace: "nowrap" };
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
-        <thead>
-          <tr>
-            <th style={{ ...th, textAlign: "left" }}>{firstColLabel || "Branch"}</th>
-            {cols.map((c) => <th key={c.key} style={th}>{c.label}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.branch || r.label || i} style={{ background: i % 2 ? "transparent" : C.sand + "66" }}>
-              <td style={{ ...td, textAlign: "left", fontWeight: 500 }}>{r.branch || r.label}</td>
-              {cols.map((c) => <td key={c.key} style={td}>{cell(r, c)}</td>)}
+    <>
+      {/* 桌面：表格 */}
+      <div className="hidden sm:block" style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+          <thead>
+            <tr>
+              <th style={{ ...th, textAlign: "left" }}>{firstColLabel || "Branch"}</th>
+              {cols.map((c) => <th key={c.key} style={th}>{c.label}</th>)}
             </tr>
-          ))}
-          {total && (
-            <tr style={{ borderTop: `2px solid ${C.line}` }}>
-              <td style={{ ...td, textAlign: "left", fontWeight: 700, color: C.brown }}>TOTAL</td>
-              {cols.map((c) => <td key={c.key} style={{ ...td, fontWeight: 700, color: C.brown }}>{cell(total, c)}</td>)}
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.branch || r.label || i} style={{ background: i % 2 ? "transparent" : C.sand + "66" }}>
+                <td style={{ ...td, textAlign: "left", fontWeight: 500 }}>{r.branch || r.label}</td>
+                {cols.map((c) => <td key={c.key} style={td}>{cell(r, c)}</td>)}
+              </tr>
+            ))}
+            {total && (
+              <tr style={{ borderTop: `2px solid ${C.line}` }}>
+                <td style={{ ...td, textAlign: "left", fontWeight: 700, color: C.brown }}>TOTAL</td>
+                {cols.map((c) => <td key={c.key} style={{ ...td, fontWeight: 700, color: C.brown }}>{cell(total, c)}</td>)}
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 手机：每行一张卡片 */}
+      <div className="sm:hidden flex flex-col gap-2">
+        {total && (
+          <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px", background: C.brown + "0e" }}>
+            <div style={{ fontWeight: 700, color: C.brown, fontSize: 14, marginBottom: 6 }}>{(firstColLabel === "Month" ? "All months" : "TOTAL")}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px 14px" }}>
+              {cols.map((c) => (
+                <div key={c.key} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
+                  <span style={{ color: C.sub }}>{c.label}</span><span style={{ color: C.brown, fontWeight: 700 }}>{cell(total, c)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {rows.map((r, i) => (
+          <div key={r.branch || r.label || i} style={{ border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px", background: C.surface }}>
+            <div style={{ fontWeight: 600, color: C.ink, fontSize: 14, marginBottom: 6 }}>{r.branch || r.label}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px 14px" }}>
+              {cols.map((c) => (
+                <div key={c.key} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
+                  <span style={{ color: C.sub }}>{c.label}</span><span style={{ color: C.ink, fontWeight: 500 }}>{cell(r, c)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
