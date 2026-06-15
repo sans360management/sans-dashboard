@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import {
   Wallet, Users, TrendingUp, CalendarCheck,
-  LayoutGrid, Megaphone, Building2, ChevronDown, Store,
+  LayoutGrid, Megaphone, Building2, ChevronDown, Store, Eye, EyeOff,
 } from "lucide-react";
 
 /* ----------------------------- 品牌色板 ----------------------------- */
@@ -28,6 +28,9 @@ let META = [];
 
 /* ----------------------------- 工具 ----------------------------- */
 const rm = (n) => "RM " + Math.round(n).toLocaleString();
+// 销售金额隐藏开关（点眼睛切换）。money() 在隐藏时把金额遮成 RM ••••，rm() 不受影响（如广告花费）。
+let HIDE_SALES = false;
+const money = (v) => (HIDE_SALES ? "RM ••••" : rm(v));
 const pct = (a, b) => (b > 0 ? (a / b) * 100 : 0);
 const tip = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, fontSize: 12, color: C.ink };
 // 柱标签：货币用 k 缩写避免太长；其余整数；营业额为空(null)返回空串
@@ -309,7 +312,7 @@ function SalesTable({ rows, total, showToday, firstColLabel }) {
   const cols = SALES_COLS.filter((c) => showToday || !c.dayOnly);
   const cell = (r, c) => {
     if (c.pct) return enrolPct(r).toFixed(1) + "%";
-    if (c.money) return r[c.key] != null ? rm(r[c.key]) : "—";
+    if (c.money) return r[c.key] != null ? money(r[c.key]) : "—";
     return r[c.key] != null ? Math.round(r[c.key]).toLocaleString() : "—";
   };
   const th = { textAlign: "right", padding: "9px 12px", fontSize: 12, color: C.sub, fontWeight: 600, whiteSpace: "nowrap", borderBottom: `1px solid ${C.line}` };
@@ -396,9 +399,9 @@ function SalesView({ dataVersion }) {
     <div className="grid gap-5">
       {kpi && (
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
-          <Kpi icon={Wallet} label={"Today Sales"} accent={C.brown} value={rm(kpi.today)} sub={"as of " + fmtDay(kpi.date)} />
-          <Kpi icon={Building2} label={"Month to Date Total Sales"} accent={C.sage} value={rm(kpi.mtd)} sub={"MTD Collection (SW+HG)"} />
-          <Kpi icon={TrendingUp} label={"Today New Leads Sales"} accent={C.clay} value={kpi.first != null ? rm(kpi.first) : "—"} sub={kpi.first != null ? "First Course · new today" : "needs previous day"} />
+          <Kpi icon={Wallet} label={"Today Sales"} accent={C.brown} value={money(kpi.today)} sub={"as of " + fmtDay(kpi.date)} />
+          <Kpi icon={Building2} label={"Month to Date Total Sales"} accent={C.sage} value={money(kpi.mtd)} sub={"MTD Collection (SW+HG)"} />
+          <Kpi icon={TrendingUp} label={"Today New Leads Sales"} accent={C.clay} value={kpi.first != null ? money(kpi.first) : "—"} sub={kpi.first != null ? "First Course · new today" : "needs previous day"} />
           <Kpi icon={Users} label={"Today Consultation"} accent={C.gold} value={intOrDash(kpi.consult)} sub={kpi.consult != null ? "new today" : "needs previous day"} />
           <Kpi icon={CalendarCheck} label={"Today Enrollment"} accent={C.brown} value={intOrDash(kpi.enrol)} sub={kpi.enrol != null ? "new today" : "needs previous day"} />
         </div>
@@ -586,6 +589,9 @@ function Dashboard({ dataVersion }) {
   const [sortBy, setSortBy] = useState("leads");
   const [gran, setGran] = useState("month");
   const [selBranch, setSelBranch] = useState("Mid Valley");
+  const [hideSales, setHideSales] = useState(() => { try { return localStorage.getItem("sans_hide_sales") === "1"; } catch (e) { return false; } });
+  HIDE_SALES = hideSales; // 渲染期同步给 money()，子组件（Sales 等）随之遮罩
+  const toggleHide = () => setHideSales((h) => { const n = !h; try { localStorage.setItem("sans_hide_sales", n ? "1" : "0"); } catch (e) {} return n; });
 
   const adsActive = month === "ALL" ? ADS_MONTHS : [month];
   const branchActive = (month === "ALL" ? BRANCH_MONTHS : [month]).filter((m) => BRANCH_MONTHS.includes(m));
@@ -714,6 +720,15 @@ function Dashboard({ dataVersion }) {
               <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
             </div>
           </div>
+            <div>
+              <label className="block text-xs mb-1" style={{ color: C.sub }}>{"Sales $"}</label>
+              <button onClick={toggleHide} title={hideSales ? "Show sales numbers" : "Hide sales numbers"}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium"
+                style={{ background: C.surface, border: `1px solid ${C.line}`, color: hideSales ? C.clay : C.sub, cursor: "pointer", height: 38 }}>
+                {hideSales ? <EyeOff size={15} /> : <Eye size={15} />}
+                {hideSales ? "Hidden" : "Visible"}
+              </button>
+            </div>
           </div>
         </header>
 
@@ -735,8 +750,8 @@ function Dashboard({ dataVersion }) {
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={branchT.leads.toLocaleString()} sub={branchT.leads ? `${"Avg CPL RM"} ${(adsT.spend / branchT.leads).toFixed(1)}` : "No branch lead data"} />
           <Kpi icon={CalendarCheck} label={"Appointments"} accent={C.gold} value={hasBranch ? branchT.appt.toLocaleString() : "—"} sub={hasBranch ? `${"Appt rate"} ${pct(branchT.appt, branchT.leads).toFixed(0)}%${" (branch lead basis)"}` : "No branch data"} />
-          <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={actualT.newLead ? rm(actualT.newLead) : "—"} sub={(actualT.newLead && adsT.spend) ? `ROAS ${(actualT.newLead / adsT.spend).toFixed(1)}× · First Course` : "No First Course yet"} />
-          <Kpi icon={Building2} label={"Actual Sales"} accent={C.brown} value={actualT.actual ? rm(actualT.actual) : "—"} sub={actualT.actual ? `New-lead share ${actualT.newPct.toFixed(0)}% · MTD Collection` : "No outlet data yet"} />
+          <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={actualT.newLead ? money(actualT.newLead) : "—"} sub={(actualT.newLead && adsT.spend) ? (hideSales ? "ROAS •• · First Course" : `ROAS ${(actualT.newLead / adsT.spend).toFixed(1)}× · First Course`) : "No First Course yet"} />
+          <Kpi icon={Building2} label={"Actual Sales"} accent={C.brown} value={actualT.actual ? money(actualT.actual) : "—"} sub={actualT.actual ? `New-lead share ${actualT.newPct.toFixed(0)}% · MTD Collection` : "No outlet data yet"} />
         </div>
         )}
 
@@ -802,12 +817,12 @@ function Dashboard({ dataVersion }) {
                 <BarChart data={OUTLET_SALES} margin={{ left: 6, right: 6, top: 18 }}>
                   <CartesianGrid stroke={C.line} vertical={false} />
                   <XAxis dataKey="m" tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => (v / 1e6).toFixed(1) + "M"} />
-                  <Tooltip contentStyle={tip} formatter={(v) => rm(v)} />
+                  <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => hideSales ? "" : (v / 1e6).toFixed(1) + "M"} />
+                  <Tooltip contentStyle={tip} formatter={(v) => money(v)} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="newLead" name={"New Lead Sales"} stackId="s" fill={C.gold} />
                   <Bar dataKey="other" name={"Existing / repeat"} stackId="s" fill={C.sage} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="actual" position="top" fontSize={10} fill={C.sub} formatter={(v) => (v / 1e6).toFixed(2) + "M"} />
+                    <LabelList dataKey="actual" position="top" fontSize={10} fill={C.sub} formatter={(v) => hideSales ? "" : (v / 1e6).toFixed(2) + "M"} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -830,11 +845,11 @@ function Dashboard({ dataVersion }) {
                   <BarChart data={adsTrend} margin={{ left: -2, right: 6, top: 18 }}>
                     <CartesianGrid stroke={C.line} vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.sub }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
-                    <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => v / 1000 + "k"} />
-                    <Tooltip contentStyle={tip} formatter={(v) => rm(v)} />
+                    <YAxis tick={{ fontSize: 11, fill: C.sub }} axisLine={false} tickLine={false} tickFormatter={(v) => hideSales ? "" : v / 1000 + "k"} />
+                    <Tooltip contentStyle={tip} formatter={(v, n) => (hideSales && n === "New Lead Sales") ? "RM ••••" : rm(v)} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Bar dataKey="sales" name={"New Lead Sales"} fill={C.gold} radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="sales" position="top" fontSize={9} fill={C.sub} formatter={lblK} />
+                      <LabelList dataKey="sales" position="top" fontSize={9} fill={C.sub} formatter={(v) => hideSales ? "" : lblK(v)} />
                     </Bar>
                     <Bar dataKey="spend" name={"Ad Spend"} fill={C.sageLt} radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="spend" position="top" fontSize={9} fill={C.sub} formatter={lblK} />
