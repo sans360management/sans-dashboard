@@ -15,7 +15,7 @@
 var TOKEN = "CHANGE_ME_to_a_long_random_string";
 
 var ADS_ID    = "1ZiriEdDq4EzTbqKC70CPQXxKVRaR2nkJjkBpq6Utuv0"; // Ads Report
-var LEADS_ID  = "1QMqcPyihO-7xABaVvyTHTdU99xuhaDdlGgRhnVNV18A"; // Daily Leads Status
+var LEADS_ID  = "1k6PeqGH4TEKZtcK1hafi73cGAkG9SWJj07zIxOjbjlQ"; // 2026 目标与现状表（每月 "<Month> 2026 Lead Report" 分页：分店×每天 Leads/Appointment/Cancellation）
 var OUTLET_ID = "18Sz-sGUka4MmjpEy4_SvmjcEETSdJqlBI3GESDYiO6w"; // Actual Outlet Sales (每月一个标签页)
 
 var TZ = "Asia/Kuala_Lumpur";

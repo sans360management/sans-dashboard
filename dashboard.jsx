@@ -615,7 +615,13 @@ function Dashboard({ dataVersion }) {
     return a;
   }, { leads: 0, appt: 0, cancel: 0 }), [month, dataVersion]);
 
-  const adsTrend = ADS.map((a) => ({ name: a.m, spend: a.spend, leads: a.leads, cpl: a.cpl, roas: a.roas, sales: a.sales, msg: a.msg }));
+  // ROAS/Sales 趋势改用 outlet 的 New Lead Sales(First Course)÷ 当月广告花费，和 KPI 卡同口径
+  const newLeadByMonth = OUTLET_SALES.reduce((o, x) => { o[x.m] = x.newLead; return o; }, {});
+  const adsTrend = ADS.map((a) => {
+    const nl = newLeadByMonth[a.m];
+    return { name: a.m, spend: a.spend, leads: a.leads, cpl: a.cpl, msg: a.msg,
+      sales: nl != null ? nl : null, roas: (nl && a.spend) ? +(nl / a.spend).toFixed(2) : null };
+  });
 
   const metaTrend = META.map((x) => ({ ...x, name: x.m }));
   const metaT = useMemo(() => {
@@ -644,7 +650,7 @@ function Dashboard({ dataVersion }) {
     return r;
   }, [branchRows, sortBy]);
 
-  const funnelMsg = adsT.msg, funnelLead = adsT.leads, funnelAppt = branchT.appt;
+  const funnelMsg = adsT.msg, funnelLead = branchT.leads, funnelAppt = branchT.appt;
   const fMax = funnelMsg || 1;
 
   const scopeLabel = month === "ALL" ? "All 2026" : month;
@@ -727,9 +733,9 @@ function Dashboard({ dataVersion }) {
         {tab !== "sales" && (
         <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
-          <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={adsT.leads.toLocaleString()} sub={`${"Avg CPL RM"} ${adsT.cpl.toFixed(1)}`} />
+          <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={branchT.leads.toLocaleString()} sub={branchT.leads ? `${"Avg CPL RM"} ${(adsT.spend / branchT.leads).toFixed(1)}` : "No branch lead data"} />
           <Kpi icon={CalendarCheck} label={"Appointments"} accent={C.gold} value={hasBranch ? branchT.appt.toLocaleString() : "—"} sub={hasBranch ? `${"Appt rate"} ${pct(branchT.appt, branchT.leads).toFixed(0)}%${" (branch lead basis)"}` : "No branch data"} />
-          <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={adsT.sales ? rm(adsT.sales) : "—"} sub={adsT.roas ? `ROAS ${adsT.roas.toFixed(1)}×${" (as of May 26)"}` : "New Lead Sales not entered"} />
+          <Kpi icon={TrendingUp} label={"New Lead Sales / ROAS"} accent={C.clay} value={actualT.newLead ? rm(actualT.newLead) : "—"} sub={(actualT.newLead && adsT.spend) ? `ROAS ${(actualT.newLead / adsT.spend).toFixed(1)}× · First Course` : "No First Course yet"} />
           <Kpi icon={Building2} label={"Actual Sales"} accent={C.brown} value={actualT.actual ? rm(actualT.actual) : "—"} sub={actualT.actual ? `New-lead share ${actualT.newPct.toFixed(0)}% · MTD Collection` : "No outlet data yet"} />
         </div>
         )}
@@ -1064,6 +1070,21 @@ function applyData(d) {
   OUTLET_SALES = d.outletSales || [];
   DAILY_SALES = (d.dailySales || []).map((x) => ({ ...x, date: normDate(x.date) }));
   META = d.meta || [];
+
+  // 用逐日 Sales 的"最新一天"覆盖该月的 outlet 月度（Actual Sales = MTD Collection / New Lead Sales = First Course），
+  // 让 Overview 的 Actual Sales / New Lead Sales / ROAS 自动跟上传的 Sales 数据走。
+  const latestByMonth = {};
+  DAILY_SALES.forEach((x) => {
+    const m = fmtMonthKey(String(x.date).slice(0, 7)); // "Jun 26"
+    if (!latestByMonth[m] || String(x.date) > latestByMonth[m].date) latestByMonth[m] = { date: String(x.date), total: x.total };
+  });
+  Object.keys(latestByMonth).forEach((m) => {
+    const t = latestByMonth[m].total || {};
+    const actual = t.mtd || 0, newLead = t.first || 0;
+    const row = { m, actual, newLead, other: Math.max(0, actual - newLead) };
+    const i = OUTLET_SALES.findIndex((o) => o.m === m);
+    if (i >= 0) OUTLET_SALES[i] = row; else OUTLET_SALES.push(row);
+  });
 }
 
 const PW_KEY = "sans_dash_pw";
