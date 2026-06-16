@@ -375,7 +375,6 @@ function SalesTable({ rows, total, showToday, firstColLabel }) {
 }
 
 function SalesView({ dataVersion }) {
-  const [mode, setMode] = useState("day"); // day | month
   const days = useMemo(() => (DAILY_SALES || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))), [dataVersion]);
   const [day, setDay] = useState("");
   useMemo(() => { if (days.length && !days.find((d) => d.date === day)) setDay(days[0].date); }, [days]); // default newest
@@ -417,13 +416,6 @@ function SalesView({ dataVersion }) {
     return { rows, total };
   }, [dataVersion]);
 
-  const tabBtn = (id, label) => (
-    <button onClick={() => setMode(id)} style={{
-      border: "none", borderRadius: 9, padding: "7px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer",
-      background: mode === id ? C.brown : "transparent", color: mode === id ? "#fff" : C.sub,
-    }}>{label}</button>
-  );
-
   return (
     <div className="grid gap-5">
       {kpi && (
@@ -435,36 +427,32 @@ function SalesView({ dataVersion }) {
           <Kpi icon={CalendarCheck} label={"Today Enrollment"} accent={C.brown} value={intOrDash(kpi.enrol)} sub={kpi.enrol != null ? "new today" : "needs previous day"} />
         </div>
       )}
+
+      {/* 区块一：分店逐日（带日期选择） */}
       <Panel
-        title={"Outlet Sales"}
-        hint={mode === "day"
-          ? "Per-branch daily figures from the uploaded Sales Report (SW+HG combined)"
-          : "Monthly totals · Consultation/Enrolment shown for months with daily reports (Jun onward)"}
-        right={
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 2, padding: 3, borderRadius: 11, background: C.sand, border: `1px solid ${C.line}` }}>
-              {tabBtn("day", "By Day")}{tabBtn("month", "By Month")}
-            </div>
-            {mode === "day" && days.length > 0 && (
-              <div className="relative">
-                <select value={day} onChange={(e) => setDay(e.target.value)}
-                  className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
-                  style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
-                  {days.map((d) => <option key={d.date} value={d.date}>{fmtDay(d.date)}</option>)}
-                </select>
-                <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
-              </div>
-            )}
+        title={"Outlet Sales · by branch (daily)"}
+        hint={"Per-branch daily figures from the uploaded Sales Report (SW+HG combined)"}
+        right={days.length > 0 && (
+          <div className="relative">
+            <select value={day} onChange={(e) => setDay(e.target.value)}
+              className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
+              style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
+              {days.map((d) => <option key={d.date} value={d.date}>{fmtDay(d.date)}</option>)}
+            </select>
+            <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
           </div>
-        }
+        )}
       >
-        {mode === "day"
-          ? (sel
-              ? <SalesTable rows={sel.branches} total={sel.total} showToday firstColLabel="Branch" />
-              : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No daily reports yet. Upload a Daily Sales Report PDF below to populate this view.</div>)
-          : (monthly.rows.length
-              ? <SalesTable rows={monthly.rows} total={monthly.total} showToday={false} firstColLabel="Month" />
-              : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No monthly sales data yet.</div>)}
+        {sel
+          ? <SalesTable rows={sel.branches} total={sel.total} showToday firstColLabel="Branch" />
+          : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No daily reports yet. Upload a Daily Sales Report PDF below to populate this view.</div>}
+      </Panel>
+
+      {/* 区块二：Monthly Sales（独立 section） */}
+      <Panel title={"Monthly Sales"} hint={"Jan–Jun monthly totals · Consultation/Enrolment shown for months with daily reports (Jun onward)"}>
+        {monthly.rows.length
+          ? <SalesTable rows={monthly.rows} total={monthly.total} showToday={false} firstColLabel="Month" />
+          : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No monthly sales data yet.</div>}
       </Panel>
 
       <UploadSales />
