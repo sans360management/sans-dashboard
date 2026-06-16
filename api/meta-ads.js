@@ -44,11 +44,14 @@ export default async function handler(req, res) {
     // 批量取 状态 + 缩图（每 50 个一批）
     const ids = rows.map((r) => r.ad_id);
     const meta = {};
-    for (let i = 0; i < ids.length; i += 50) {
-      const batch = ids.slice(i, i + 50).join(",");
+    for (let i = 0; i < ids.length; i += 25) {
+      const batch = ids.slice(i, i + 25).join(",");
       if (!batch) continue;
-      const j = await gj(`https://graph.facebook.com/${V}/?ids=${batch}&fields=effective_status,creative%7Bthumbnail_url%7D&access_token=${encodeURIComponent(token)}`);
-      Object.assign(meta, j);
+      // 状态+缩图是锦上添花：单批失败就跳过（不让整个 Winning Ads 报错）
+      try {
+        const j = await gj(`https://graph.facebook.com/${V}/?ids=${batch}&fields=effective_status,creative%7Bthumbnail_url%7D&access_token=${encodeURIComponent(token)}`);
+        Object.assign(meta, j);
+      } catch (e) { /* 跳过该批的状态/缩图 */ }
     }
 
     let ads = rows.map((r) => {
