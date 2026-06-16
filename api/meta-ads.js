@@ -3,6 +3,8 @@
 // 密码门控；token 只在服务器端（META_TOKEN / META_AD_ACCOUNT）。
 import { fetchInsightsPaged } from "../lib/meta.js";
 
+export const config = { maxDuration: 60 }; // 异步报表需要轮询，给足时间
+
 const V = "v21.0";
 const av = (actions, t) => { const x = (actions || []).find((y) => y.action_type === t); return x ? Number(x.value) : 0; };
 const median = (arr) => {
