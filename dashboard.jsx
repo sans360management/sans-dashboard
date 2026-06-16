@@ -406,7 +406,9 @@ function SalesView({ dataVersion }) {
       const d = dailyByMonth[o.m];
       return {
         label: o.m, mtd: o.actual, first: o.newLead,
-        consult: d ? d.total.consult : null, enrol: d ? d.total.enrol : null,
+        // 优先用逐日(如 6 月)；否则用 Outlet 月度表里加总的 Consultation/Enrolment(Jan–May)
+        consult: d ? d.total.consult : (o.consult != null ? o.consult : null),
+        enrol: d ? d.total.enrol : (o.enrol != null ? o.enrol : null),
       };
     });
     const total = rows.reduce((a, r) => ({
@@ -1100,7 +1102,13 @@ function applyData(d) {
   ADS_DAILY = d.adsDaily || {};
   BRANCH_DAILY = d.branchDaily || {};
   OUTLET_SALES = d.outletSales || [];
-  DAILY_SALES = (d.dailySales || []).map((x) => ({ ...x, date: normDate(x.date) }));
+  // 防御：同一天若被上传多次（表里有重复行），按分店名去重并重算合计，避免数字翻倍
+  DAILY_SALES = (d.dailySales || []).map((x) => {
+    const seen = new Set();
+    const branches = (x.branches || []).filter((b) => { const k = (b.branch || "").trim(); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+    const total = branches.reduce((a, b) => ({ today: a.today + b.today, mtd: a.mtd + b.mtd, consult: a.consult + b.consult, enrol: a.enrol + b.enrol, first: a.first + b.first }), { today: 0, mtd: 0, consult: 0, enrol: 0, first: 0 });
+    return { ...x, date: normDate(x.date), branches, total };
+  });
   META = d.meta || [];
 
   // 用逐日 Sales 的"最新一天"覆盖该月的 outlet 月度（Actual Sales = MTD Collection / New Lead Sales = First Course），

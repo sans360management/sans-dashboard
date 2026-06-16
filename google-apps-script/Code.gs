@@ -216,21 +216,24 @@ function buildData() {
 
   var branches = Object.keys(branchAgg).map(function (b) { return { branch: b, m: branchAgg[b] }; });
 
-  // ----- Actual Outlet Sales（独立私密表，每月一个标签页 "Jan 2026"…，读每页 TOTAL 行）-----
+  // ----- Actual Outlet Sales（独立私密表，每月一个标签页 "Jan 2026"…）-----
+  // 列：0=Outlet,6=MTD Collection(SW+HG),7=Consultation,8=Enrolment,10=First Course。
+  // 按分店行加总（没有 TOTAL 行也可），顺带把 Consultation/Enrolment 也加总进来。
   var outletSales = [];
   try {
     SpreadsheetApp.openById(OUTLET_ID).getSheets().forEach(function (sh) {
       var m = adsMonth(sh.getName());            // "Jan 2026" -> "Jan 26"（跳过 Yearly Summary 等）
       if (!m) return;
       var rows = sh.getDataRange().getValues();
-      for (var i = rows.length - 1; i >= 0; i--) {
-        if (String(rows[i][0]).trim().toUpperCase() === "TOTAL") {
-          var actual = num(rows[i][6]);          // MTD Collection (SW+HG)
-          var newLead = num(rows[i][10]);        // First Course = New Lead Sales
-          outletSales.push({ m: m, actual: actual, newLead: newLead, other: Math.max(0, actual - newLead) });
-          break;
-        }
+      var mtd = 0, first = 0, consult = 0, enrol = 0, n = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var nm = String(rows[i][0]).trim();
+        if (!nm || /^(outlet|total)$/i.test(nm)) continue;  // 跳过表头/合计行
+        var v = num(rows[i][6]);
+        if (!v) continue;                                   // 跳过没有 MTD 的非数据行
+        mtd += v; first += num(rows[i][10]); consult += num(rows[i][7]); enrol += num(rows[i][8]); n++;
       }
+      if (n > 0) outletSales.push({ m: m, actual: mtd, newLead: first, other: Math.max(0, mtd - first), consult: consult, enrol: enrol });
     });
     outletSales.sort(function (a, b) { return sortKey(a.m) - sortKey(b.m); });
   } catch (e) {}
