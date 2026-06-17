@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import {
   Wallet, Users, TrendingUp, CalendarCheck,
-  LayoutGrid, Megaphone, Building2, ChevronDown, Store, Eye, EyeOff, XCircle,
+  LayoutGrid, Megaphone, Building2, ChevronDown, Store, Eye, EyeOff, XCircle, Brain,
 } from "lucide-react";
 
 /* ----------------------------- 品牌色板 ----------------------------- */
@@ -602,6 +602,79 @@ function WinningAds() {
   );
 }
 
+/* ----------------------------- Marketing 大脑（全量数据 AI 分析） ----------------------------- */
+function MarketingChat() {
+  const [chat, setChat] = useState([]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const taRef = useRef(null);
+  const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
+
+  const buildData = () => ({
+    today: new Date().toISOString().slice(0, 10),
+    ads: (ADS || []).map((a) => ({ m: a.m, spend: a.spend, leads: a.leads, msg: a.msg, cpl: a.cpl, sales: a.sales, roas: a.roas })),
+    outlet: (OUTLET_SALES || []).map((o) => ({ m: o.m, actual: o.actual, newLead: o.newLead, consult: o.consult, enrol: o.enrol })),
+    branchMonthly: (BRANCHES || []).map((b) => ({ branch: b.branch, m: b.m })),
+    meta: (META || []).map((x) => ({ m: x.m, spend: x.spend, cpm: x.cpm, freq: x.freq, msg: x.msg, reg: x.reg, ctr: x.ctr })),
+    dailySales: (DAILY_SALES || []).map((d) => ({ date: d.date, total: d.total })),
+  });
+
+  const send = async (content) => {
+    if (busy || !content || !content.trim()) return;
+    const next = [...chat, { role: "user", text: content.trim() }];
+    setChat(next); setInput(""); setBusy(true); setErr("");
+    if (taRef.current) taRef.current.style.height = "auto";
+    try {
+      const r = await fetch("/api/marketing-chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw(), data: buildData(), messages: next.map((m) => ({ role: m.role, content: m.text })) }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      setChat((c) => [...c, { role: "assistant", text: j.text || "" }]);
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const suggestions = [
+    "看一遍整个看板，给我营销诊断（赚钱点 / 漏点 / 最该改的 3 件事）",
+    "哪个分店约访率最差？怎么改进？",
+    "6 月广告该扩量还是先优化？为什么？",
+    "新客销售（First Course）和广告花费的关系如何？",
+  ];
+
+  return (
+    <div className="grid gap-5">
+      <Panel title={"Marketing 大脑"} hint={"基于整个看板数据（广告 / 门店销售 / 各分店漏斗 / Meta）的 AI 营销分析 · 可继续追问 · 仅供参考"}>
+        {chat.length === 0 && !busy && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            {suggestions.map((s) => (
+              <button key={s} onClick={() => send(s)} style={{ border: `1px solid ${C.line}`, background: C.sand, color: C.ink, borderRadius: 999, padding: "6px 12px", fontSize: 12.5, cursor: "pointer" }}>{s}</button>
+            ))}
+          </div>
+        )}
+        {(chat.length > 0 || busy) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 480, overflowY: "auto", paddingRight: 4 }}>
+            {chat.map((m, i) => (
+              <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "86%", background: m.role === "user" ? C.brown : C.sand, color: m.role === "user" ? "#fff" : C.ink, borderRadius: 12, padding: "8px 12px", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.text}</div>
+            ))}
+            {busy && <div style={{ alignSelf: "flex-start", color: C.sub, fontSize: 12 }}>思考中…（约 10–40 秒，可能在拉 Meta 数据）</div>}
+          </div>
+        )}
+        {err && <div style={{ color: C.clay, fontSize: 12, marginTop: 8 }}>{err}</div>}
+        <form onSubmit={(e) => { e.preventDefault(); send(input); }} style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "flex-end" }}>
+          <textarea ref={taRef} rows={1} value={input} onChange={(e) => setInput(e.target.value)} disabled={busy}
+            onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(input); } }}
+            placeholder="问任何营销问题（Enter 发送，Shift+Enter 换行）"
+            style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 13, lineHeight: 1.5, outline: "none", resize: "none", overflowY: "auto", maxHeight: 140 }} />
+          <button type="submit" disabled={busy || !input.trim()} style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: (busy || !input.trim()) ? 0.5 : 1 }}>Send</button>
+        </form>
+      </Panel>
+    </div>
+  );
+}
+
 function Dashboard({ dataVersion }) {
   const [tab, setTab] = useState("overview");
   const [month, setMonth] = useState("ALL");
@@ -728,6 +801,7 @@ function Dashboard({ dataVersion }) {
     { id: "ops", label: "Branches", icon: Building2 },
     { id: "meta", label: "Meta Ads", icon: TrendingUp },
     { id: "winners", label: "Winning Ads", icon: Megaphone },
+    { id: "brain", label: "Marketing 大脑", icon: Brain },
   ];
 
   return (
@@ -788,7 +862,7 @@ function Dashboard({ dataVersion }) {
         </div>
 
         {/* KPI 行（Sales 页用它自己的卡片，见 SalesView） */}
-        {tab !== "sales" && tab !== "ads" && (
+        {tab !== "sales" && tab !== "ads" && tab !== "brain" && (
         <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={branchT.leads.toLocaleString()} sub={branchT.leads ? `${"Avg CPL RM"} ${(adsT.spend / branchT.leads).toFixed(1)}` : "No branch lead data"} />
@@ -1118,6 +1192,9 @@ function Dashboard({ dataVersion }) {
 
         {/* ---------------- Winning Ads ---------------- */}
         {tab === "winners" && <WinningAds />}
+
+        {/* ---------------- Marketing 大脑 ---------------- */}
+        {tab === "brain" && <MarketingChat />}
 
         <footer className="text-center mt-8 text-xs" style={{ color: C.sub }}>
           {"Source: Ads Report (daily ads) · All Branch Lead Report (daily branch Leads / Appt / Cancellation) · Meta Marketing API — Google Drive + Meta"}
