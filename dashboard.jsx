@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import {
   Wallet, Users, TrendingUp, CalendarCheck,
-  LayoutGrid, Megaphone, Building2, ChevronDown, Store, Eye, EyeOff,
+  LayoutGrid, Megaphone, Building2, ChevronDown, Store, Eye, EyeOff, XCircle,
 } from "lucide-react";
 
 /* ----------------------------- 品牌色板 ----------------------------- */
@@ -640,6 +640,30 @@ function Dashboard({ dataVersion }) {
     return a;
   }, { leads: 0, appt: 0, cancel: 0 }), [month, dataVersion]);
 
+  // Ads 页顶部「Today」卡片：选中月份里最新一天的 广告花费 + 分店 leads/appt/cancel
+  const adsKpi = useMemo(() => {
+    const lastM = adsActive[adsActive.length - 1];
+    if (!lastM) return null;
+    const ad = ADS_DAILY[lastM] || [];
+    const adLast = ad.length ? ad.reduce((a, b) => (b.d > a.d ? b : a)) : null;
+    const byDay = {};
+    Object.keys(BRANCH_DAILY).forEach((br) => {
+      (BRANCH_DAILY[br][lastM] || []).forEach((row) => {
+        const o = byDay[row[0]] || (byDay[row[0]] = { d: row[0], leads: 0, appt: 0, cancel: 0 });
+        o.leads += row[1]; o.appt += row[2]; o.cancel += row[3];
+      });
+    });
+    const brDays = Object.values(byDay);
+    const brLast = brDays.length ? brDays.reduce((a, b) => (b.d > a.d ? b : a)) : null;
+    const mon = lastM.split(" ")[0];
+    const spend = adLast ? adLast.spend : 0, leads = brLast ? brLast.leads : 0;
+    return {
+      adLabel: adLast ? `${mon} ${adLast.d}` : null, brLabel: brLast ? `${mon} ${brLast.d}` : null,
+      spend, leads, appt: brLast ? brLast.appt : 0, cancel: brLast ? brLast.cancel : 0,
+      cpl: leads ? spend / leads : null,
+    };
+  }, [month, dataVersion]);
+
   // ROAS/Sales 趋势改用 outlet 的 New Lead Sales(First Course)÷ 当月广告花费，和 KPI 卡同口径
   const newLeadByMonth = OUTLET_SALES.reduce((o, x) => { o[x.m] = x.newLead; return o; }, {});
   const adsTrend = ADS.map((a) => {
@@ -764,7 +788,7 @@ function Dashboard({ dataVersion }) {
         </div>
 
         {/* KPI 行（Sales 页用它自己的卡片，见 SalesView） */}
-        {tab !== "sales" && (
+        {tab !== "sales" && tab !== "ads" && (
         <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={branchT.leads.toLocaleString()} sub={branchT.leads ? `${"Avg CPL RM"} ${(adsT.spend / branchT.leads).toFixed(1)}` : "No branch lead data"} />
@@ -856,6 +880,15 @@ function Dashboard({ dataVersion }) {
         {/* ---------------- 广告投放 ---------------- */}
         {tab === "ads" && (
           <div className="grid gap-5">
+            {adsKpi && (
+              <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
+                <Kpi icon={Wallet} label={"Today Ad Spend"} accent={C.brown} value={rm(adsKpi.spend)} sub={adsKpi.adLabel || "no ad data"} />
+                <Kpi icon={Users} label={"Today Total Leads"} accent={C.sage} value={adsKpi.leads.toLocaleString()} sub={adsKpi.brLabel ? `${adsKpi.brLabel} · branch` : "no branch data"} />
+                <Kpi icon={CalendarCheck} label={"Today Appointments"} accent={C.gold} value={adsKpi.appt.toLocaleString()} sub={adsKpi.leads ? `Appt rate ${pct(adsKpi.appt, adsKpi.leads).toFixed(0)}%` : "—"} />
+                <Kpi icon={XCircle} label={"Today Cancellation"} accent={C.clay} value={adsKpi.cancel.toLocaleString()} sub={adsKpi.appt ? `${pct(adsKpi.cancel, adsKpi.appt).toFixed(0)}% of appts` : "—"} />
+                <Kpi icon={TrendingUp} label={"Today Cost Per Lead"} accent={C.brown} value={adsKpi.cpl != null ? rm(adsKpi.cpl) : "—"} sub={"today spend ÷ leads"} />
+              </div>
+            )}
             {gran === "day" && <AdsDaily rows={dailyAdsRows} scopeLabel={scopeLabel} />}
             {gran === "month" && <>
             <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
