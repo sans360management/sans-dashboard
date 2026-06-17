@@ -603,8 +603,7 @@ function WinningAds() {
 }
 
 /* ----------------------------- Marketing 大脑（全量数据 AI 分析） ----------------------------- */
-function MarketingChat() {
-  const [chat, setChat] = useState([]);
+function MarketingChat({ chat, setChat }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -618,6 +617,12 @@ function MarketingChat() {
     branchMonthly: (BRANCHES || []).map((b) => ({ branch: b.branch, m: b.m })),
     meta: (META || []).map((x) => ({ m: x.m, spend: x.spend, cpm: x.cpm, freq: x.freq, msg: x.msg, reg: x.reg, ctr: x.ctr })),
     dailySales: (DAILY_SALES || []).map((d) => ({ date: d.date, total: d.total })),
+    // 最新一天各分店门店销售（含 per-branch Consultation/Enrolment/First Course，月累计）
+    salesByBranch: (() => {
+      const days = (DAILY_SALES || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      const latest = days[0];
+      return latest ? { date: latest.date, branches: (latest.branches || []).map((b) => ({ branch: b.branch, mtd: b.mtd, consult: b.consult, enrol: b.enrol, first: b.first })) } : null;
+    })(),
   });
 
   const send = async (content) => {
@@ -681,6 +686,7 @@ function Dashboard({ dataVersion }) {
   const [sortBy, setSortBy] = useState("leads");
   const [gran, setGran] = useState("month");
   const [selBranch, setSelBranch] = useState("Mid Valley");
+  const [brainChat, setBrainChat] = useState([]); // Marketing 大脑聊天记录（提到这里，切标签也保留）
   const [hideSales, setHideSales] = useState(() => { try { return localStorage.getItem("sans_hide_sales") === "1"; } catch (e) { return false; } });
   HIDE_SALES = hideSales; // 渲染期同步给 money()，子组件（Sales 等）随之遮罩
   const toggleHide = () => setHideSales((h) => { const n = !h; try { localStorage.setItem("sans_hide_sales", n ? "1" : "0"); } catch (e) {} return n; });
@@ -1194,7 +1200,7 @@ function Dashboard({ dataVersion }) {
         {tab === "winners" && <WinningAds />}
 
         {/* ---------------- Marketing 大脑 ---------------- */}
-        {tab === "brain" && <MarketingChat />}
+        {tab === "brain" && <MarketingChat chat={brainChat} setChat={setBrainChat} />}
 
         <footer className="text-center mt-8 text-xs" style={{ color: C.sub }}>
           {"Source: Ads Report (daily ads) · All Branch Lead Report (daily branch Leads / Appt / Cancellation) · Meta Marketing API — Google Drive + Meta"}

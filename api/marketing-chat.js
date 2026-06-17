@@ -36,6 +36,16 @@ function buildContext(d) {
     return `${x.date}: 当天收款 ${rm(t.today)} | MTD ${rm(t.mtd)} | First Course ${rm(t.first)} | Consult ${orDash(t.consult)} | Enrol ${orDash(t.enrol)}`;
   }).join("\n");
 
+  // 各分店门店销售（最新一天，月累计；含 per-branch Consultation/Enrolment）
+  let salesBranch = "";
+  if (d.salesByBranch && Array.isArray(d.salesByBranch.branches)) {
+    const rows = d.salesByBranch.branches
+      .map((b) => ({ ...b, conv: b.consult ? (b.enrol / b.consult) * 100 : null }))
+      .sort((a, b) => (a.conv == null ? 1 : b.conv == null ? -1 : a.conv - b.conv)); // 转化率低→高
+    salesBranch = rows.map((b) =>
+      `${b.branch}: Consultation ${orDash(b.consult)} | Enrolment ${orDash(b.enrol)} | Consult→Enrol ${b.conv != null ? b.conv.toFixed(0) + "%" : "—"} | First Course ${rm(b.first)} | MTD ${rm(b.mtd)}`).join("\n");
+  }
+
   return `# Sans Wellness 看板全量数据（今天 ${d.today || ""}）
 
 ## 月度广告（Ads Report）
@@ -48,10 +58,13 @@ ${outlet || "（无）"}
 ${branchTxt || "（无）"}
 全公司合计：Leads ${bt.leads} | 预约 ${bt.appt} | 取消 ${bt.cancel} | 约访率 ${bt.leads ? Math.round((bt.appt / bt.leads) * 100) : 0}%
 
+## 各分店门店销售（最新一天 ${(d.salesByBranch && d.salesByBranch.date) || ""}，月累计；含 per-branch Consultation/Enrolment）
+${salesBranch || "（无逐日 Sales 数据，无法给分店级 Consult/Enrol）"}
+
 ## Meta 账号月度
 ${meta || "（无）"}
 
-## 最近逐日门店销售
+## 最近逐日门店销售（全公司）
 ${daily || "（无）"}`;
 }
 
