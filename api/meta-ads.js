@@ -5,6 +5,8 @@ import { fetchInsightsPaged } from "../lib/meta.js";
 
 export const config = { maxDuration: 60 }; // 异步报表需要轮询，给足时间
 
+import { resolveUser } from "../lib/users.js";
+
 const V = "v21.0";
 const av = (actions, t) => { const x = (actions || []).find((y) => y.action_type === t); return x ? Number(x.value) : 0; };
 const median = (arr) => {
@@ -25,9 +27,9 @@ export default async function handler(req, res) {
   if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   body = body || {};
 
-  const REAL = process.env.DASHBOARD_PASSWORD;
-  if (!REAL) { res.status(500).json({ error: "服务器未配置 DASHBOARD_PASSWORD" }); return; }
-  if (!body.password || body.password !== REAL) { res.status(401).json({ error: "unauthorized" }); return; }
+  const user = resolveUser(body.password);
+  if (!user) { res.status(401).json({ error: "unauthorized" }); return; }
+  if (!user.tabs.includes("winners")) { res.status(403).json({ error: "无权访问 Winning Ads" }); return; }
 
   const token = process.env.META_TOKEN, act = process.env.META_AD_ACCOUNT;
   if (!token || !act) { res.status(500).json({ error: "Meta 未配置（META_TOKEN / META_AD_ACCOUNT）" }); return; }

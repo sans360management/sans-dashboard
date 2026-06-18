@@ -3,6 +3,7 @@
 // 密码门控；需 ANTHROPIC_API_KEY + META_TOKEN + META_AD_ACCOUNT。⚠️ 数据会发送到 Anthropic API。
 import Anthropic from "@anthropic-ai/sdk";
 import { resolvePeriod, fetchAdLevel, fetchAccount, summarizeAdLevel, summarizeAccount } from "../lib/meta.js";
+import { resolveUser } from "../lib/users.js";
 
 export const config = { maxDuration: 60 };
 
@@ -55,9 +56,9 @@ export default async function handler(req, res) {
   if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   body = body || {};
 
-  const REAL = process.env.DASHBOARD_PASSWORD;
-  if (!REAL) { res.status(500).json({ error: "服务器未配置 DASHBOARD_PASSWORD" }); return; }
-  if (!body.password || body.password !== REAL) { res.status(401).json({ error: "unauthorized" }); return; }
+  const user = resolveUser(body.password);
+  if (!user) { res.status(401).json({ error: "unauthorized" }); return; }
+  if (!user.tabs.includes("winners")) { res.status(403).json({ error: "无权访问 Winning Ads" }); return; }
   if (!process.env.ANTHROPIC_API_KEY) { res.status(500).json({ error: "AI 未配置：请在 Vercel 加环境变量 ANTHROPIC_API_KEY" }); return; }
   const mToken = process.env.META_TOKEN, mAct = process.env.META_AD_ACCOUNT;
 

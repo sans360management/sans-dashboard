@@ -1,6 +1,7 @@
 // Vercel Serverless Function: /api/data
-// 验证访问密码 → 从私密 Google Sheet（Apps Script）取数据 → 返回 JSON。
+// 验证访问密码 → 从私密 Google Sheet（Apps Script）取数据 → 按用户权限过滤 → 返回 JSON。
 // 所有凭证只存在服务器端环境变量，浏览器永远看不到。
+import { resolveUser, filterData } from "../lib/users.js";
 
 // 从 Meta Marketing API 拉每月广告数据（需环境变量 META_TOKEN + META_AD_ACCOUNT）
 const META_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -63,7 +64,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!password || password !== REAL) {
+  const user = resolveUser(password);
+  if (!user) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
@@ -124,8 +126,13 @@ export default async function handler(req, res) {
       data.metaError = e.message;
     }
 
+    // 按用户权限过滤数据（被限 tab 的数据键置空，真正不下发），并附上该用户能看的 tab
+    const filtered = filterData(data, user.tabs);
+    filtered.allowedTabs = user.tabs;
+    filtered.userName = user.name;
+
     res.setHeader("Cache-Control", "no-store");
-    res.status(200).json(data);
+    res.status(200).json(filtered);
   } catch (e) {
     res.status(502).json({ error: "读取表格失败：" + e.message });
   }

@@ -25,6 +25,7 @@ let BRANCH_DAILY = {};
 let OUTLET_SALES = [];
 let DAILY_SALES = [];
 let META = [];
+let ALLOWED_TABS = ["overview", "sales", "ads", "ops", "meta", "winners", "brain"]; // 登录后由后端按权限返回
 
 /* ----------------------------- 工具 ----------------------------- */
 const rm = (n) => "RM " + Math.round(n).toLocaleString();
@@ -799,7 +800,7 @@ function Dashboard({ dataVersion }) {
     return out;
   }, [month, selBranch, dataVersion]);
 
-  const TABS = [
+  const ALL_TABS = [
     { id: "overview", label: "Overview", icon: LayoutGrid },
     { id: "sales", label: "Sales", icon: Store },
     { id: "ads", label: "Ads", icon: Megaphone },
@@ -808,6 +809,9 @@ function Dashboard({ dataVersion }) {
     { id: "winners", label: "Winning Ads", icon: Megaphone },
     { id: "brain", label: "Marketing 大脑", icon: Brain },
   ];
+  const TABS = ALL_TABS.filter((t) => ALLOWED_TABS.includes(t.id));
+  // 当前 tab 不在权限内（如受限用户首次进、或权限变化）→ 切到第一个允许的
+  useEffect(() => { if (TABS.length && !TABS.some((t) => t.id === tab)) setTab(TABS[0].id); }, [dataVersion]);
 
   return (
     <div style={{ background: C.sand, minHeight: "100vh", color: C.ink, fontFamily: "'Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif" }}>
@@ -867,7 +871,7 @@ function Dashboard({ dataVersion }) {
         </div>
 
         {/* KPI 行（Sales 页用它自己的卡片，见 SalesView） */}
-        {tab !== "sales" && tab !== "ads" && tab !== "brain" && (
+        {tab === "overview" && (
         <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
           <Kpi icon={Wallet} label={"Ad Spend"} accent={C.brown} value={rm(adsT.spend)} sub={month === "ALL" ? "Jan – Jun 26" : month} />
           <Kpi icon={Users} label={"Total Leads"} accent={C.sage} value={branchT.leads.toLocaleString()} sub={branchT.leads ? `${"Avg CPL RM"} ${(adsT.spend / branchT.leads).toFixed(1)}` : "No branch lead data"} />
@@ -1225,6 +1229,7 @@ function applyData(d) {
     return { ...x, date: normDate(x.date), branches, total };
   });
   META = d.meta || [];
+  ALLOWED_TABS = Array.isArray(d.allowedTabs) && d.allowedTabs.length ? d.allowedTabs : ALLOWED_TABS;
 
   // 用逐日 Sales 的"最新一天"覆盖该月的 outlet 月度（Actual Sales = MTD Collection / New Lead Sales = First Course），
   // 让 Overview 的 Actual Sales / New Lead Sales / ROAS 自动跟上传的 Sales 数据走。

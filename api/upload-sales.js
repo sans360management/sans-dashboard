@@ -5,6 +5,7 @@
 // 密码门控；不持久化任何金额在本函数。
 import pdf from "pdf-parse/lib/pdf-parse.js";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveUser } from "../lib/users.js";
 
 export const config = { maxDuration: 60 };
 
@@ -207,9 +208,9 @@ export default async function handler(req, res) {
   if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   body = body || {};
 
-  const REAL = process.env.DASHBOARD_PASSWORD;
-  if (!REAL) { res.status(500).json({ error: "服务器未配置 DASHBOARD_PASSWORD" }); return; }
-  if (!body.password || body.password !== REAL) { res.status(401).json({ error: "unauthorized" }); return; }
+  const user = resolveUser(body.password);
+  if (!user) { res.status(401).json({ error: "unauthorized" }); return; }
+  if (!user.tabs.includes("sales")) { res.status(403).json({ error: "无权上传 Sales 数据" }); return; }
 
   try {
     // ---- 逐日：解析 ----
