@@ -616,10 +616,12 @@ function MarketingChat({ chat, setChat }) {
     outlet: (OUTLET_SALES || []).map((o) => ({ m: o.m, actual: o.actual, newLead: o.newLead, consult: o.consult, enrol: o.enrol })),
     branchMonthly: (BRANCHES || []).map((b) => ({ branch: b.branch, m: b.m })),
     meta: (META || []).map((x) => ({ m: x.m, spend: x.spend, cpm: x.cpm, freq: x.freq, msg: x.msg, reg: x.reg, ctr: x.ctr })),
-    dailySales: (DAILY_SALES || []).map((d) => ({ date: d.date, total: d.total })),
-    // 最近 4 天各分店门店销售（含 per-branch Consultation/Enrolment/First Course，月累计）→ 让大脑能做分店级"今天 vs 昨天"对比
-    dailyBranch: (DAILY_SALES || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(-4)
-      .map((d) => ({ date: d.date, branches: (d.branches || []).map((b) => ({ branch: b.branch, today: b.today, mtd: b.mtd, consult: b.consult, enrol: b.enrol, first: b.first })) })),
+    // ----- 全部原始逐条明细（让大脑"每一条数据都知道"）-----
+    adsDaily: ADS_DAILY || {},        // { "Jun 26": [{d,spend,leads,msg,cpl}], ... }
+    branchDaily: BRANCH_DAILY || {},  // { branch: { "Jun 26": [[d,leads,appt,cancel]] } }
+    // 所有天的逐店门店销售明细（不只最近 4 天）
+    dailySales: (DAILY_SALES || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .map((d) => ({ date: d.date, total: d.total, branches: (d.branches || []).map((b) => ({ branch: b.branch, today: b.today, mtd: b.mtd, consult: b.consult, enrol: b.enrol, first: b.first })) })),
   });
 
   const send = async (content) => {

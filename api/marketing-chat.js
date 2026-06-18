@@ -31,13 +31,30 @@ function buildContext(d) {
     `${b.branch}: Leads ${b.leads} | 预约 ${b.appt} | 取消 ${b.cancel} | 约访率 ${b.leads ? Math.round((b.appt / b.leads) * 100) : 0}%`).join("\n");
   const bt = perBranch.reduce((a, b) => ({ leads: a.leads + b.leads, appt: a.appt + b.appt, cancel: a.cancel + b.cancel }), { leads: 0, appt: 0, cancel: 0 });
 
-  const daily = (d.dailySales || []).slice(-8).map((x) => {
+  const daily = (d.dailySales || []).map((x) => {
     const t = x.total || {};
     return `${x.date}: 当天收款 ${rm(t.today)} | MTD ${rm(t.mtd)} | First Course ${rm(t.first)} | Consult ${orDash(t.consult)} | Enrol ${orDash(t.enrol)}`;
   }).join("\n");
 
+  // ===== 原始逐条明细（让大脑能查到每一条数据）=====
+  const adsDailyTxt = Object.keys(d.adsDaily || {}).map((m) => {
+    const rows = (d.adsDaily[m] || []).map((r) => `  d${r.d}: 花费 ${rm(r.spend)} | Leads ${r.leads} | 信息 ${r.msg} | CPL ${r.cpl != null ? rm(r.cpl) : "—"}`).join("\n");
+    return `${m}:\n${rows}`;
+  }).join("\n");
+  const branchDailyTxt = Object.keys(d.branchDaily || {}).map((br) => {
+    const months = d.branchDaily[br] || {};
+    const lines = Object.keys(months).map((m) => `  ${m}: ` + (months[m] || []).map((r) => `d${r[0]}(${r[1]}/${r[2]}/${r[3]})`).join(" ")).join("\n");
+    return `${br}:\n${lines}`;
+  }).join("\n");
+  const salesDetailTxt = (d.dailySales || []).map((x) => {
+    const t = x.total || {};
+    const head = `${x.date}（合计 当天 ${rm(t.today)} / MTD ${rm(t.mtd)} / First ${rm(t.first)} / Consult ${orDash(t.consult)} / Enrol ${orDash(t.enrol)}）`;
+    const rows = (x.branches || []).map((b) => `  ${b.branch}: 当天 ${rm(b.today)} | MTD ${rm(b.mtd)} | Consult ${orDash(b.consult)} | Enrol ${orDash(b.enrol)} | First ${rm(b.first)}`).join("\n");
+    return `${head}\n${rows}`;
+  }).join("\n");
+
   // 各分店门店销售：最新一天明细 + 最近几天的分店级 Consult/Enrol/First 对比（数值=当日月累计 MTD）
-  const db = Array.isArray(d.dailyBranch) ? d.dailyBranch : [];
+  const db = (d.dailySales || []).slice(-4);
   let salesBranch = "", branchTrend = "", latestDate = "", trendDates = "";
   if (db.length) {
     const latest = db[db.length - 1];
@@ -79,8 +96,19 @@ ${branchTrend || "（无）"}
 ## Meta 账号月度
 ${meta || "（无）"}
 
-## 最近逐日门店销售（全公司）
-${daily || "（无）"}`;
+## 逐日门店销售（全公司，所有天）
+${daily || "（无）"}
+
+## ===== 原始逐条明细（每一条数据；做合计/排名优先用上面的汇总，查具体某条用这里）=====
+
+### 广告逐日（每月每天：花费 / Leads / 信息 / CPL）
+${adsDailyTxt || "（无）"}
+
+### 各分店漏斗逐日（格式 d日(Leads/预约/取消)，来自 Lead Report）
+${branchDailyTxt || "（无）"}
+
+### 门店销售逐日 × 逐店（每天每店：当天收款 / MTD累计 / Consult / Enrol / First Course）
+${salesDetailTxt || "（无）"}`;
 }
 
 const TOOL = {
@@ -119,10 +147,11 @@ export default async function handler(req, res) {
 
   const today = (body.data && body.data.today) || new Date().toISOString().slice(0, 10);
   const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，靠 Meta 广告 + Messenger/落地页获客，再到门店成交）的"市场营销大脑"——一位资深营销与增长分析师。今天是 ${today}。
-你能看到整个看板的数据：月度广告投放、门店销售（收款/新客 First Course/Consultation/Enrolment）、各分店漏斗（Leads→预约→取消）、Meta 账号月度。
-口径：New Lead Sales = First Course = 新客销售；Actual Sales = MTD Collection = 整体收款（含旧客复购）；ROAS = 营收 ÷ 广告花费（同口径同时段）；约访率 = 预约 ÷ Leads。
+你能看到整个看板的**全部数据**：既有汇总（月度广告、门店销售、各分店累计漏斗、Meta 账号月度），也有**逐条原始明细**（广告逐日、各分店漏斗逐日、门店销售逐日×逐店）——也就是说看板里**每一条数据你都有**。
+用法：做合计/排名/趋势时**优先用"汇总"区块**（更准，别去心算几百行）；查"某天某店某项"的具体数值时**用"原始逐条明细"区块**。两者对不上时以原始明细为准并说明。
+口径：New Lead Sales = First Course = 新客销售；Actual Sales = MTD Collection = 整体收款（含旧客复购）；ROAS = 营收 ÷ 广告花费（同口径同时段）；约访率 = 预约 ÷ Leads；门店销售里 Consult/Enrol/First/MTD 都是"当月累计 MTD"，相邻两天相减=当天净增。
 需要"每条广告"明细或看板里没有的时段时，调用 get_ad_data 工具去 Meta 拉。
-回答要：用简体中文；具体、引用看板里的真实数字；先结论后依据；给可执行建议（扩量/优化/分店改进等）；简洁、可继续追问。不要编造没有的数据。`;
+回答要：用简体中文；具体、引用看板里的真实数字；先结论后依据；给可执行建议；简洁、可继续追问。**绝不编造**没有的数据——查不到就说看板里没有。`;
   const context = buildContext({ ...(body.data || {}), today });
 
   try {
