@@ -36,14 +36,26 @@ function buildContext(d) {
     return `${x.date}: 当天收款 ${rm(t.today)} | MTD ${rm(t.mtd)} | First Course ${rm(t.first)} | Consult ${orDash(t.consult)} | Enrol ${orDash(t.enrol)}`;
   }).join("\n");
 
-  // 各分店门店销售（最新一天，月累计；含 per-branch Consultation/Enrolment）
-  let salesBranch = "";
-  if (d.salesByBranch && Array.isArray(d.salesByBranch.branches)) {
-    const rows = d.salesByBranch.branches
+  // 各分店门店销售：最新一天明细 + 最近几天的分店级 Consult/Enrol/First 对比（数值=当日月累计 MTD）
+  const db = Array.isArray(d.dailyBranch) ? d.dailyBranch : [];
+  let salesBranch = "", branchTrend = "", latestDate = "", trendDates = "";
+  if (db.length) {
+    const latest = db[db.length - 1];
+    latestDate = latest.date || "";
+    const rows = (latest.branches || [])
       .map((b) => ({ ...b, conv: b.consult ? (b.enrol / b.consult) * 100 : null }))
-      .sort((a, b) => (a.conv == null ? 1 : b.conv == null ? -1 : a.conv - b.conv)); // 转化率低→高
+      .sort((a, b) => (a.conv == null ? 1 : b.conv == null ? -1 : a.conv - b.conv));
     salesBranch = rows.map((b) =>
       `${b.branch}: Consultation ${orDash(b.consult)} | Enrolment ${orDash(b.enrol)} | Consult→Enrol ${b.conv != null ? b.conv.toFixed(0) + "%" : "—"} | First Course ${rm(b.first)} | MTD ${rm(b.mtd)}`).join("\n");
+    trendDates = db.map((x) => x.date).join(" → ");
+    const get = (day, br, f) => { const x = (day.branches || []).find((b) => b.branch === br); return x ? x[f] : null; };
+    const brSet = [...new Set(db.flatMap((x) => (x.branches || []).map((b) => b.branch)))];
+    branchTrend = brSet.map((br) => {
+      const c = db.map((day) => orDash(get(day, br, "consult"))).join("→");
+      const e = db.map((day) => orDash(get(day, br, "enrol"))).join("→");
+      const fr = db.map((day) => { const v = get(day, br, "first"); return v != null ? Math.round(v) : "—"; }).join("→");
+      return `${br}: Consult ${c} | Enrol ${e} | First ${fr}`;
+    }).join("\n");
   }
 
   return `# Sans Wellness 看板全量数据（今天 ${d.today || ""}）
@@ -58,8 +70,11 @@ ${outlet || "（无）"}
 ${branchTxt || "（无）"}
 全公司合计：Leads ${bt.leads} | 预约 ${bt.appt} | 取消 ${bt.cancel} | 约访率 ${bt.leads ? Math.round((bt.appt / bt.leads) * 100) : 0}%
 
-## 各分店门店销售（最新一天 ${(d.salesByBranch && d.salesByBranch.date) || ""}，月累计；含 per-branch Consultation/Enrolment）
+## 各分店门店销售（最新一天 ${latestDate}，月累计；含 per-branch Consultation/Enrolment）
 ${salesBranch || "（无逐日 Sales 数据，无法给分店级 Consult/Enrol）"}
+
+## 各分店逐日（日期顺序 ${trendDates || "—"}；数值=当日月累计 MTD，相邻两天相减即"当天净增"，可回答"今天 vs 昨天哪家店 Consult/Enrol 增最多"）
+${branchTrend || "（无）"}
 
 ## Meta 账号月度
 ${meta || "（无）"}

@@ -617,12 +617,9 @@ function MarketingChat({ chat, setChat }) {
     branchMonthly: (BRANCHES || []).map((b) => ({ branch: b.branch, m: b.m })),
     meta: (META || []).map((x) => ({ m: x.m, spend: x.spend, cpm: x.cpm, freq: x.freq, msg: x.msg, reg: x.reg, ctr: x.ctr })),
     dailySales: (DAILY_SALES || []).map((d) => ({ date: d.date, total: d.total })),
-    // 最新一天各分店门店销售（含 per-branch Consultation/Enrolment/First Course，月累计）
-    salesByBranch: (() => {
-      const days = (DAILY_SALES || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
-      const latest = days[0];
-      return latest ? { date: latest.date, branches: (latest.branches || []).map((b) => ({ branch: b.branch, mtd: b.mtd, consult: b.consult, enrol: b.enrol, first: b.first })) } : null;
-    })(),
+    // 最近 4 天各分店门店销售（含 per-branch Consultation/Enrolment/First Course，月累计）→ 让大脑能做分店级"今天 vs 昨天"对比
+    dailyBranch: (DAILY_SALES || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(-4)
+      .map((d) => ({ date: d.date, branches: (d.branches || []).map((b) => ({ branch: b.branch, today: b.today, mtd: b.mtd, consult: b.consult, enrol: b.enrol, first: b.first })) })),
   });
 
   const send = async (content) => {
