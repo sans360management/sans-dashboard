@@ -77,6 +77,25 @@ export default async function handler(req, res) {
     const data = await r.json();
     if (data && data.error) throw new Error("Apps Script: " + data.error);
 
+    // 逐日门店销售去重：同一天若被上传多次（表里有重复分店行），按分店名去重并重算合计，
+    // 避免数字翻倍。看板前端 + Telegram 报告(/api/send-report)都吃这份，修一处两边都安全。
+    if (data && Array.isArray(data.dailySales)) {
+      data.dailySales = data.dailySales.map((d) => {
+        const seen = new Set();
+        const branches = (d.branches || []).filter((b) => {
+          const k = String(b.branch || "").trim();
+          if (!k || seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+        const total = branches.reduce((a, b) => ({
+          today: a.today + (b.today || 0), mtd: a.mtd + (b.mtd || 0),
+          consult: a.consult + (b.consult || 0), enrol: a.enrol + (b.enrol || 0), first: a.first + (b.first || 0),
+        }), { today: 0, mtd: 0, consult: 0, enrol: 0, first: 0 });
+        return { ...d, branches, total };
+      });
+    }
+
     // 补充尚未进入 live 表的月份（如 June，来自 PDF）—— 存在 Vercel 环境变量 OUTLET_EXTRA（私密、不进代码）
     // 格式：{"Jun 26":{"actual":648412,"newLead":254887.2}}
     if (data && Array.isArray(data.outletSales) && process.env.OUTLET_EXTRA) {
