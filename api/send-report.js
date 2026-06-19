@@ -17,7 +17,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ error: 'Not enough data' });
     }
 
-    const daily = [...data.dailySales].sort((a, b) => new Date(a.date) - new Date(b.date));
+    // 日期 TZ-safe 规整："2026-06-18" 或 Apps Script 的 "Thu Jun 18 2026 ... GMT+0800" 都 → "YYYY-MM-DD"
+    const MON3 = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+    const ymd = (s) => {
+      s = String(s);
+      let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+      m = s.match(/\b([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{4})/);
+      if (m && MON3[m[1]]) return `${m[3]}-${MON3[m[1]]}-${String(+m[2]).padStart(2, '0')}`;
+      return s.slice(0, 10);
+    };
+    const daily = [...data.dailySales].sort((a, b) => ymd(a.date).localeCompare(ymd(b.date)));
     const t = daily[daily.length - 1];
     const y = daily[daily.length - 2];
     const sum = (day, f) => day ? day.branches.reduce((s, b) => s + (b[f] || 0), 0) : 0;
@@ -30,9 +40,8 @@ export default async function handler(req, res) {
     const enrol       = sum(t, 'enrol')   - sum(y, 'enrol');
 
     const MONTHLY_TARGET = Number(process.env.MONTHLY_TARGET) || 2000000;
-    const tDate = new Date(t.date);
-    const yDate = new Date(y.date);
-    const daysInMonth = new Date(tDate.getFullYear(), tDate.getMonth() + 1, 0).getDate();
+    const [tY, tM] = ymd(t.date).split('-').map(Number);
+    const daysInMonth = new Date(tY, tM, 0).getDate();
     const dailyTarget = MONTHLY_TARGET / daysInMonth;
     const mtdGap      = MONTHLY_TARGET - mtdSales;
     const mtdPct      = (mtdSales / MONTHLY_TARGET * 100).toFixed(1);
@@ -40,13 +49,13 @@ export default async function handler(req, res) {
     const dailyPct    = (todaySales / dailyTarget * 100).toFixed(1);
     const newLeadsPct = mtdSales > 0 ? (mtdFirst / mtdSales * 100).toFixed(1) : '0.0';
 
-    const fmt2 = (d) => `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+    const fmtDMY = (s) => { const [y, m, d] = ymd(s).split('-'); return `${d}-${m}-${y}`; };
     const fmtNum = (n, dec=2) => Number(n).toLocaleString('en-MY', { minimumFractionDigits: dec, maximumFractionDigits: dec });
     const sign = (n) => n >= 0 ? '+' : '';
-    const month = tDate.getMonth() + 1;
+    const month = tM;
 
     const msg = `${month}月 Target - 2Mil
-🗓️ ${fmt2(tDate)}
+🗓️ ${fmtDMY(t.date)}
 ➖➖➖
 目标：${fmtNum(MONTHLY_TARGET, 0)}
 现状: ${fmtNum(mtdSales)}
@@ -62,7 +71,7 @@ New Leads Sales: ${fmtNum(newLeads)}
 Total Consult: ${consult}
 Total Enrolment: ${enrol}
 ➖➖➖
-对比昨天（${fmt2(yDate)}）增加：
+对比昨天（${fmtDMY(y.date)}）增加：
 New Leads Sales: ${sign(newLeads)}${fmtNum(newLeads)}
 Total Consult: ${sign(consult)}${consult}
 Total Enrolment: ${sign(enrol)}${enrol}
@@ -77,7 +86,7 @@ ${newLeadsPct}%`;
     });
     const tgData = await tgRes.json();
     if (!tgData.ok) return res.status(500).json({ error: 'Telegram failed', detail: tgData });
-    return res.status(200).json({ success: true, date: fmt2(tDate) });
+    return res.status(200).json({ success: true, date: fmtDMY(t.date) });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
