@@ -1,7 +1,12 @@
 // Vercel Serverless Function: /api/send-report
-// Triggered by Vercel Cron at 23:59 daily — no computer needed
+// 由 GitHub Actions 每晚 23:59(马来西亚)定时触发 → 读销售数据 → 发 Telegram。完全云端，不用开电脑。
+// 安全：设了环境变量 REPORT_KEY 后，必须带 ?key=<REPORT_KEY> 才能触发（防别人乱发）。
 
 export default async function handler(req, res) {
+  const key = (req.query && req.query.key) || "";
+  if (process.env.REPORT_KEY && key !== process.env.REPORT_KEY) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
   try {
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers['x-forwarded-host'] || req.headers.host;

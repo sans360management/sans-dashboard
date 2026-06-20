@@ -1,0 +1,19 @@
+name: Daily Sales Report
+
+# 每天 23:59 马来西亚时间(UTC+8) = 15:59 UTC 触发；也可在 Actions 页手动 Run。
+on:
+  schedule:
+    - cron: "59 15 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger /api/send-report (server sends Telegram)
+        run: |
+          echo "Calling send-report..."
+          # -o /dev/null 不打印返回内容(里面只有 success+日期，无金额，但仍不显示更安心)
+          # 只输出 HTTP 状态码；非 2xx 会让这步失败(Actions 显示红色)
+          curl -fsS -o /dev/null -w "HTTP %{http_code}\n" \
+            "https://sans-dashboard-two.vercel.app/api/send-report?key=${{ secrets.REPORT_KEY }}"
