@@ -91,7 +91,7 @@ ${newLeadsPct}%`;
     });
     const tgData = await tgRes.json();
     if (!tgData.ok) return res.status(500).json({ error: 'Telegram failed', detail: tgData });
-    return res.status(200).json({ success: true, date: fmtDMY(t.date) });
+    return res.status(200).json({ success: true, date: fmtDMY(t.date), chat: tgData.result && tgData.result.chat });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
