@@ -468,12 +468,21 @@ const AD_WINDOWS = [3, 7, 14, 30];
 const badgeColor = (b) => (b === "good" ? C.sage : b === "poor" ? C.clay : C.gold);
 const badgeText = (b) => (b === "good" ? "Good" : b === "poor" ? "Underperforming" : "OK");
 
-function AdCard({ a }) {
+const adStatLine = (a) => `${a.objective === "messaging" ? "Cost/msg " : a.objective === "lead" ? "Cost/reg " : "Cost "}`;
+
+function AdCard({ a, onOpen }) {
+  const [hover, setHover] = useState(false);
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 10, display: "flex", gap: 10 }}>
-      {a.thumb
-        ? <img src={a.thumb} alt="" loading="lazy" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: C.sand }} />
-        : <div style={{ width: 56, height: 56, borderRadius: 8, background: C.sand, flexShrink: 0 }} />}
+    <div onClick={() => onOpen && onOpen(a)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 10, display: "flex", gap: 10, cursor: "pointer", boxShadow: hover ? "0 4px 14px rgba(58,42,28,0.12)" : "none", transition: "box-shadow .15s" }}>
+      <div style={{ position: "relative", width: 56, height: 56, flexShrink: 0 }}>
+        {a.thumb
+          ? <img src={a.thumb} alt="" loading="lazy" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover", background: C.sand }} />
+          : <div style={{ width: 56, height: 56, borderRadius: 8, background: C.sand }} />}
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          <span style={{ width: 22, height: 22, borderRadius: 999, background: "rgba(58,42,28,0.45)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", paddingLeft: 2 }}>▶</span>
+        </div>
+      </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 12, color: C.ink, fontWeight: 600, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.name}>{a.name}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
@@ -481,10 +490,68 @@ function AdCard({ a }) {
           <span style={{ fontSize: 10, color: a.active ? C.sage : C.sub }}>{a.active ? "● ACTIVE" : "PAUSED"}</span>
         </div>
         <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>
-          {a.objective === "messaging" ? "Cost/msg " : a.objective === "lead" ? "Cost/reg " : "Cost "}
+          {adStatLine(a)}
           <b style={{ color: C.brown }}>{a.costPerResult != null ? rm(a.costPerResult) : "—"}</b>
           {`　CTR ${(+a.ctr).toFixed(2)}%　Spend ${rm(a.spend)}`}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AdPreviewModal({ ad, onClose }) {
+  const [phase, setPhase] = useState("loading"); // loading | ready | error
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch("/api/ad-preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw(), adId: ad.id, format: "MOBILE_FEED_STANDARD" }) });
+        const j = await r.json();
+        if (!alive) return;
+        if (!r.ok) { setPhase("error"); return; }
+        setPreviewUrl(j.previewUrl || null);
+        setPhase("ready");
+      } catch (e) { if (alive) setPhase("error"); }
+    })();
+    return () => { alive = false; };
+  }, [ad.id]);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const fbLink = ad.permalink
+    ? <a href={ad.permalink} target="_blank" rel="noopener" style={{ display: "inline-block", marginTop: 10, background: C.brown, color: "#fff", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>在 Facebook 打开 ↗</a>
+    : null;
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(58,42,28,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, maxWidth: 380, width: "92vw", maxHeight: "90vh", overflow: "auto", padding: 14 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+          <div style={{ minWidth: 0, flex: 1, fontSize: 13, color: C.ink, fontWeight: 600, lineHeight: 1.3 }} title={ad.name}>{ad.name}</div>
+          <button onClick={onClose} aria-label="Close" style={{ border: "none", background: "transparent", color: C.sub, fontSize: 18, lineHeight: 1, cursor: "pointer", padding: "0 2px" }}>✕</button>
+        </div>
+        <div style={{ fontSize: 12, color: C.sub, marginBottom: 10 }}>
+          {adStatLine(ad)}
+          <b style={{ color: C.brown }}>{ad.costPerResult != null ? rm(ad.costPerResult) : "—"}</b>
+          {`　CTR ${(+ad.ctr).toFixed(2)}%　Spend ${rm(ad.spend)}`}
+        </div>
+        {phase === "loading" && <div style={{ textAlign: "center", color: C.sub, fontSize: 13, padding: "40px 0" }}>Loading preview…</div>}
+        {phase === "ready" && previewUrl && (
+          <iframe src={previewUrl} title="Ad preview" allow="autoplay; encrypted-media" scrolling="no"
+            style={{ width: "100%", height: 640, maxHeight: "70vh", border: "none", borderRadius: 10, background: C.sand }} />
+        )}
+        {((phase === "ready" && !previewUrl) || phase === "error") && (
+          <div style={{ textAlign: "center", padding: "24px 0" }}>
+            <div style={{ color: C.sub, fontSize: 13 }}>{phase === "error" ? "预览暂时读取失败。" : "这条广告无法在此内嵌预览。"}</div>
+            {fbLink || <div style={{ color: C.sub, fontSize: 12, marginTop: 8 }}>（也没有可用的 Facebook 链接）</div>}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -499,6 +566,7 @@ function WinningAds() {
   const [chatInput, setChatInput] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
   const [chatErr, setChatErr] = useState("");
+  const [preview, setPreview] = useState(null);
   const taRef = useRef(null);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
@@ -582,23 +650,25 @@ function WinningAds() {
       {phase === "ready" && (<>
         <Panel title={"Winning Ads · Messaging"} hint={`Last ${data.window}d · ranked by cost per messaging conversation · median ${data.medians.messaging ? rm(data.medians.messaging) : "—"}`}>
           <div className="grid gap-3" style={cardGrid}>
-            {winners("messaging").map((a) => <AdCard key={a.id} a={a} />)}
+            {winners("messaging").map((a) => <AdCard key={a.id} a={a} onOpen={setPreview} />)}
             {winners("messaging").length === 0 && <p className="text-sm" style={{ color: C.sub }}>Not enough data in this window.</p>}
           </div>
         </Panel>
         <Panel title={"Winning Ads · Landing Page"} hint={`Last ${data.window}d · ranked by cost per registration · median ${data.medians.lead ? rm(data.medians.lead) : "—"}`}>
           <div className="grid gap-3" style={cardGrid}>
-            {winners("lead").map((a) => <AdCard key={a.id} a={a} />)}
+            {winners("lead").map((a) => <AdCard key={a.id} a={a} onOpen={setPreview} />)}
             {winners("lead").length === 0 && <p className="text-sm" style={{ color: C.sub }}>Not enough data in this window.</p>}
           </div>
         </Panel>
         <Panel title={"Live Ads (currently running)"} hint={`${live.length} active ads · sorted by performance within objective · green = good, red = review`}>
           <div className="grid gap-3" style={cardGrid}>
-            {live.map((a) => <AdCard key={a.id} a={a} />)}
+            {live.map((a) => <AdCard key={a.id} a={a} onOpen={setPreview} />)}
             {live.length === 0 && <p className="text-sm" style={{ color: C.sub }}>No active ads in this window.</p>}
           </div>
         </Panel>
       </>)}
+
+      {preview && <AdPreviewModal ad={preview} onClose={() => setPreview(null)} />}
     </div>
   );
 }
