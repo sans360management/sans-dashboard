@@ -478,16 +478,16 @@ const REGION_KEYS = [
 const adRegion = (a) => {
   const s = a.campaign || "";
   for (const r of REGION_KEYS) if (r.re.test(s)) return r.region;
-  return "无分类";
+  return "Other";
 };
-// 等级：复用后端已算好的 badge/eligible —— 好→A、中→B、差→C、样本不足→数据不足
-const adGrade = (a) => (!a.eligible ? "数据不足" : a.badge === "good" ? "A" : a.badge === "ok" ? "B" : "C");
+// Grade: reuse meta-ads' badge/eligible —— good→A, ok→B, poor→C, no sample→Not enough data
+const adGrade = (a) => (!a.eligible ? "Not enough data" : a.badge === "good" ? "A" : a.badge === "ok" ? "B" : "C");
 const SELL_KEYS = [
   { tag: "NeckFix", re: /neck\s*fix/i },
   { tag: "199", re: /199/ },
   { tag: "Testimonial", re: /testimonial|见证|口碑/i },
-  { tag: "口播", re: /口播/ },
-  { tag: "氛围感", re: /氛围/ },
+  { tag: "Voiceover", re: /口播/ },
+  { tag: "Mood", re: /氛围/ },
   { tag: "Retargeting", re: /retarget/i },
   { tag: "Video", re: /video|视频/i },
   { tag: "Img", re: /\bimg\b|图文/i },
@@ -495,8 +495,8 @@ const SELL_KEYS = [
 const adTags = (a) => {
   const s = `${a.campaign || ""} ${a.name || ""}`;
   const tags = [];
-  if (/msg/i.test(s) || a.objective === "messaging") tags.push("私讯");
-  else if (/lead|\bLP\b|form/i.test(s) || a.objective === "lead") tags.push("留资");
+  if (/msg/i.test(s) || a.objective === "messaging") tags.push("Messaging");
+  else if (/lead|\bLP\b|form/i.test(s) || a.objective === "lead") tags.push("Lead");
   for (const t of SELL_KEYS) if (t.re.test(s)) tags.push(t.tag);
   return tags;
 };
@@ -605,8 +605,7 @@ function WinningAds() {
   const [chatBusy, setChatBusy] = useState(false);
   const [chatErr, setChatErr] = useState("");
   const [preview, setPreview] = useState(null);
-  const [tagFilter, setTagFilter] = useState(null);   // Live Ads 顶部标签筛选
-  const [openTesting, setOpenTesting] = useState({}); // 各区「数据不足」档是否展开
+  const [openTesting, setOpenTesting] = useState({}); // 各区「Not enough data」档是否展开
   const taRef = useRef(null);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
@@ -649,17 +648,15 @@ function WinningAds() {
   const live = ads.filter((a) => a.active);
   const cardGrid = { gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" };
 
-  // Live Ads：先按地区(KL/JB/无分类) → 再按等级(A/B/C/数据不足) 分组（分享给别部门看）
-  const REGIONS = ["KL", "JB", "无分类"];
+  // Live Ads：先按地区(KL/JB/Other) → 再按等级(A/B/C/Not enough data) 分组（分享给别部门看）
+  const REGIONS = ["KL", "JB", "Other"];
   const GRADES = [
-    { key: "A", title: "A级 · 表现好（可加预算）", color: C.sage },
-    { key: "B", title: "B级 · 稳定（维持）", color: C.gold },
-    { key: "C", title: "C级 · 偏弱（考虑关停 / 换素材）", color: C.clay },
-    { key: "数据不足", title: "数据不足 · 还在测试，先别判断", color: C.sub },
+    { key: "A", title: "Grade A", color: C.sage },
+    { key: "B", title: "Grade B", color: C.gold },
+    { key: "C", title: "Grade C", color: C.clay },
+    { key: "Not enough data", title: "Not enough data", color: C.sub },
   ];
-  const liveTags = [...new Set(live.flatMap(adTags))];
-  const liveF = tagFilter ? live.filter((a) => adTags(a).includes(tagFilter)) : live;
-  const gradeSort = (gk) => (a, b) => (gk === "数据不足"
+  const gradeSort = (gk) => (a, b) => (gk === "Not enough data"
     ? (b.spend || 0) - (a.spend || 0)
     : (a.objective < b.objective ? -1 : a.objective > b.objective ? 1 : (a.costPerResult || 1e9) - (b.costPerResult || 1e9)));
 
@@ -715,32 +712,20 @@ function WinningAds() {
           </div>
         </Panel>
         {live.length === 0 && (
-          <Panel title={"Live Ads（在跑的广告）"}><p className="text-sm" style={{ color: C.sub }}>No active ads in this window.</p></Panel>
-        )}
-
-        {live.length > 0 && liveTags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span style={{ fontSize: 12, color: C.sub }}>筛选：</span>
-            <button onClick={() => setTagFilter(null)} className="px-3 py-1 rounded-full text-xs font-medium"
-              style={{ background: tagFilter === null ? C.brown : C.surface, color: tagFilter === null ? "#fff" : C.sub, border: `1px solid ${C.line}` }}>全部</button>
-            {liveTags.map((t) => (
-              <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} className="px-3 py-1 rounded-full text-xs font-medium"
-                style={{ background: tagFilter === t ? C.brown : C.surface, color: tagFilter === t ? "#fff" : C.sub, border: `1px solid ${C.line}` }}>{t}</button>
-            ))}
-          </div>
+          <Panel title={"Live Ads"}><p className="text-sm" style={{ color: C.sub }}>No active ads in this window.</p></Panel>
         )}
 
         {live.length > 0 && REGIONS.map((region) => {
-          const inRegion = liveF.filter((a) => adRegion(a) === region);
+          const inRegion = live.filter((a) => adRegion(a) === region);
           if (!inRegion.length) return null;
           const spend = inRegion.reduce((s, a) => s + (a.spend || 0), 0);
           return (
-            <Panel key={region} title={"Live Ads · " + region} hint={`${inRegion.length} 个在跑 · 花费 ${rm(spend)} · A好 B稳 C弱`}>
+            <Panel key={region} title={"Live Ads · " + region} hint={`${inRegion.length} active ads · spend ${rm(spend)}`}>
               <div className="grid gap-4">
                 {GRADES.map((g) => {
                   const rows = inRegion.filter((a) => adGrade(a) === g.key).sort(gradeSort(g.key));
                   if (!rows.length) return null;
-                  const isTesting = g.key === "数据不足";
+                  const isTesting = g.key === "Not enough data";
                   const open = !isTesting || openTesting[region];
                   return (
                     <div key={g.key}>
@@ -749,7 +734,7 @@ function WinningAds() {
                         <span style={{ width: 9, height: 9, borderRadius: 999, background: g.color, flexShrink: 0 }} />
                         <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{g.title}</span>
                         <span style={{ fontSize: 12, color: C.sub }}>{rows.length}</span>
-                        {isTesting && <span style={{ fontSize: 11, color: C.sub }}>{open ? "▼" : "▶ 点开"}</span>}
+                        {isTesting && <span style={{ fontSize: 11, color: C.sub }}>{open ? "▼" : "▶ show"}</span>}
                       </div>
                       {open && (
                         <div className="grid gap-3" style={cardGrid}>
