@@ -502,6 +502,7 @@ function AdCard({ a, onOpen }) {
 function AdPreviewModal({ ad, onClose }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | error
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [permalink, setPermalink] = useState(null);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
   useEffect(() => {
@@ -513,6 +514,7 @@ function AdPreviewModal({ ad, onClose }) {
         if (!alive) return;
         if (!r.ok) { setPhase("error"); return; }
         setPreviewUrl(j.previewUrl || null);
+        setPermalink(j.permalink || null);
         setPhase("ready");
       } catch (e) { if (alive) setPhase("error"); }
     })();
@@ -525,8 +527,8 @@ function AdPreviewModal({ ad, onClose }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const fbLink = ad.permalink
-    ? <a href={ad.permalink} target="_blank" rel="noopener" style={{ display: "inline-block", marginTop: 10, background: C.brown, color: "#fff", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>在 Facebook 打开 ↗</a>
+  const fbLink = permalink
+    ? <a href={permalink} target="_blank" rel="noopener" style={{ display: "inline-block", marginTop: 10, background: C.brown, color: "#fff", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>在 Facebook 打开 ↗</a>
     : null;
 
   return (

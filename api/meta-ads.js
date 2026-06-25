@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       if (!batch) continue;
       // 状态+缩图是锦上添花：单批失败就跳过（不让整个 Winning Ads 报错）
       try {
-        const j = await gj(`https://graph.facebook.com/${V}/?ids=${batch}&fields=effective_status,creative%7Bthumbnail_url%2Cpreview_shareable_link%7D&access_token=${encodeURIComponent(token)}`);
+        const j = await gj(`https://graph.facebook.com/${V}/?ids=${batch}&fields=effective_status,creative%7Bthumbnail_url%7D&access_token=${encodeURIComponent(token)}`);
         Object.assign(meta, j);
       } catch (e) { /* 跳过该批的状态/缩图 */ }
     }
@@ -71,7 +71,6 @@ export default async function handler(req, res) {
         status: m.effective_status || "UNKNOWN",
         active: m.effective_status === "ACTIVE",
         thumb: (m.creative && m.creative.thumbnail_url) || null,
-        permalink: (m.creative && m.creative.preview_shareable_link) || null,
         badge: null, eligible: false,
       };
     });

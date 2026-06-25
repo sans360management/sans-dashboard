@@ -39,8 +39,15 @@ export default async function handler(req, res) {
     const m = html.match(/src="([^"]+)"/);
     const previewUrl = m ? m[1].replace(/&amp;/g, "&") : null;
 
+    // 降级用的 Facebook 链接：单独最佳努力获取，失败也不影响预览
+    let permalink = null;
+    try {
+      const p = await gj(`https://graph.facebook.com/${V}/${encodeURIComponent(adId)}?fields=preview_shareable_link&access_token=${encodeURIComponent(token)}`);
+      permalink = p.preview_shareable_link || null;
+    } catch (e) { /* 忽略 */ }
+
     res.setHeader("Cache-Control", "no-store");
-    res.status(200).json({ previewUrl });
+    res.status(200).json({ previewUrl, permalink });
   } catch (e) {
     res.status(502).json({ error: "Meta 预览读取失败：" + e.message });
   }
