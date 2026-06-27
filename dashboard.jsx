@@ -794,6 +794,7 @@ function MarketingChat({ chat, setChat }) {
   };
 
   const suggestions = [
+    "对比昨天，列出每一家分店的 New Lead Sales 增长，以及各新增几个 Consult、Enroll",
     "看一遍整个看板，给我营销诊断（赚钱点 / 漏点 / 最该改的 3 件事）",
     "哪个分店约访率最差？怎么改进？",
     "6 月广告该扩量还是先优化？为什么？",
