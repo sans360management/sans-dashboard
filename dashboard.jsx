@@ -377,9 +377,15 @@ function SalesTable({ rows, total, showToday, firstColLabel }) {
 
 function SalesView({ dataVersion, gran }) {
   const days = useMemo(() => (DAILY_SALES || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))), [dataVersion]);
+  // 月份选择：把 6月/7月 分开——先选月份，再选该月的某一天
+  const months = useMemo(() => [...new Set(days.map((d) => String(d.date).slice(0, 7)))], [days]);
+  const monthLabel = (mk) => { const p = mk.split("-"); return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][(+p[1]) - 1] + " " + p[0]; };
+  const [selMonth, setSelMonth] = useState("");
+  useMemo(() => { if (months.length && !months.includes(selMonth)) setSelMonth(months[0]); }, [months]); // default newest month
+  const daysInMonth = useMemo(() => days.filter((d) => String(d.date).slice(0, 7) === selMonth), [days, selMonth]);
   const [day, setDay] = useState("");
-  useMemo(() => { if (days.length && !days.find((d) => d.date === day)) setDay(days[0].date); }, [days]); // default newest
-  const sel = days.find((d) => d.date === day) || days[0] || null;
+  useMemo(() => { if (daysInMonth.length && !daysInMonth.find((d) => d.date === day)) setDay(daysInMonth[0].date); }, [daysInMonth]); // default newest in month
+  const sel = daysInMonth.find((d) => d.date === day) || daysInMonth[0] || null;
 
   // 顶部 5 张卡片（跟随选中的一天）。Today Sales/MTD 直接取；三个"Today"是当天净增=当天累计−前一天累计。
   const kpi = useMemo(() => {
@@ -391,7 +397,7 @@ function SalesView({ dataVersion, gran }) {
     const isFirst = sel.date.slice(8, 10) === "01"; // 当月 1 号：MTD 即当天
     const delta = (f) => (isFirst ? sel.total[f] : prev ? sel.total[f] - prev.total[f] : null);
     return { date: sel.date, today: sel.total.today, mtd: sel.total.mtd, first: delta("first"), consult: delta("consult"), enrol: delta("enrol") };
-  }, [days, day]);
+  }, [days, day, selMonth]);
   const intOrDash = (v) => (v != null ? Math.round(v).toLocaleString() : "—");
 
   // 月度行：来自 OUTLET_SALES（MTD Collection=actual / First Course=newLead）；
@@ -436,14 +442,24 @@ function SalesView({ dataVersion, gran }) {
       <Panel
         title={"Outlet Sales · by branch (daily)"}
         hint={"Per-branch daily figures from the uploaded Sales Report (SW+HG combined)"}
-        right={days.length > 0 && (
-          <div className="relative">
-            <select value={day} onChange={(e) => setDay(e.target.value)}
-              className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
-              style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
-              {days.map((d) => <option key={d.date} value={d.date}>{fmtDay(d.date)}</option>)}
-            </select>
-            <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
+        right={months.length > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <select value={selMonth} onChange={(e) => setSelMonth(e.target.value)}
+                className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
+                style={{ background: C.sand, border: `1px solid ${C.line}`, color: C.brown, fontWeight: 600 }}>
+                {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+              <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.brown }} />
+            </div>
+            <div className="relative">
+              <select value={day} onChange={(e) => setDay(e.target.value)}
+                className="appearance-none rounded-xl pl-4 pr-9 py-2 text-sm font-medium outline-none cursor-pointer"
+                style={{ background: C.surface, border: `1px solid ${C.line}`, color: C.ink }}>
+                {daysInMonth.map((d) => <option key={d.date} value={d.date}>{fmtDay(d.date)}</option>)}
+              </select>
+              <ChevronDown size={15} className="absolute right-3 pointer-events-none" style={{ top: 11, color: C.sub }} />
+            </div>
           </div>
         )}
       >
