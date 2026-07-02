@@ -375,7 +375,7 @@ function SalesTable({ rows, total, showToday, firstColLabel }) {
   );
 }
 
-function SalesView({ dataVersion }) {
+function SalesView({ dataVersion, gran }) {
   const days = useMemo(() => (DAILY_SALES || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))), [dataVersion]);
   const [day, setDay] = useState("");
   useMemo(() => { if (days.length && !days.find((d) => d.date === day)) setDay(days[0].date); }, [days]); // default newest
@@ -421,7 +421,7 @@ function SalesView({ dataVersion }) {
 
   return (
     <div className="grid gap-5">
-      {kpi && (
+      {gran === "day" && kpi && (
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
           <Kpi icon={Wallet} label={"Today Sales"} accent={C.brown} value={money(kpi.today)} sub={"as of " + fmtDay(kpi.date)} />
           <Kpi icon={Building2} label={"Month to Date Total Sales"} accent={C.sage} value={money(kpi.mtd)} sub={"MTD Collection (SW+HG)"} />
@@ -431,7 +431,8 @@ function SalesView({ dataVersion }) {
         </div>
       )}
 
-      {/* 区块一：分店逐日（带日期选择） */}
+      {/* 区块一：分店逐日（带日期选择），Daily 视图 */}
+      {gran === "day" && (
       <Panel
         title={"Outlet Sales · by branch (daily)"}
         hint={"Per-branch daily figures from the uploaded Sales Report (SW+HG combined)"}
@@ -450,13 +451,16 @@ function SalesView({ dataVersion }) {
           ? <SalesTable rows={sel.branches} total={sel.total} showToday firstColLabel="Branch" />
           : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No daily reports yet. Upload a Daily Sales Report PDF below to populate this view.</div>}
       </Panel>
+      )}
 
-      {/* 区块二：Monthly Sales（独立 section） */}
+      {/* 区块二：Monthly Sales，Monthly 视图 */}
+      {gran === "month" && (
       <Panel title={"Monthly Sales"} hint={"Jan–Jun monthly totals · Consultation/Enrolment shown for months with daily reports (Jun onward)"}>
         {monthly.rows.length
           ? <SalesTable rows={monthly.rows} total={monthly.total} showToday={false} firstColLabel="Month" />
           : <div style={{ color: C.sub, fontSize: 13, padding: "8px 2px" }}>No monthly sales data yet.</div>}
       </Panel>
+      )}
 
       <UploadSales />
     </div>
@@ -1111,7 +1115,7 @@ function Dashboard({ dataVersion }) {
         )}
 
         {/* ---------------- 门店销售 Sales ---------------- */}
-        {tab === "sales" && <SalesView dataVersion={dataVersion} />}
+        {tab === "sales" && <SalesView dataVersion={dataVersion} gran={gran} />}
 
         {/* ---------------- 广告投放 ---------------- */}
         {tab === "ads" && (
