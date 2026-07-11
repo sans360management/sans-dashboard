@@ -14,15 +14,19 @@ async function gj(url) { const r = await fetch(url); const j = await r.json(); i
 
 const DEFAULT_NAMES = ["6月口播16", "6月口播13", "6月口播12", "6月口播7", "6月口播14", "自然疗法-KL-Video-CC V2", "5月Sans护理口播15"];
 
-async function allAds(token, act) {
-  let url = `https://graph.facebook.com/${V}/${act}/ads?fields=id,name,effective_status,created_time&limit=250&access_token=${encodeURIComponent(token)}`;
-  const out = [];
-  for (let p = 0; p < 40 && url; p++) {
-    const j = await gj(url);
-    if (Array.isArray(j.data)) out.push(...j.data);
-    url = j.paging && j.paging.next ? j.paging.next : null;
+// 用 Meta 名称过滤(CONTAIN)只取相关广告，避免翻遍整个账号（会 60s 超时）
+async function adsByKeywords(token, act, kws) {
+  const byId = {};
+  for (const kw of kws) {
+    const filt = encodeURIComponent(JSON.stringify([{ field: "name", operator: "CONTAIN", value: kw }]));
+    let url = `https://graph.facebook.com/${V}/${act}/ads?fields=id,name,effective_status,created_time&filtering=${filt}&limit=200&access_token=${encodeURIComponent(token)}`;
+    for (let p = 0; p < 20 && url; p++) {
+      const j = await gj(url);
+      (j.data || []).forEach((a) => { byId[a.id] = a; });
+      url = j.paging && j.paging.next ? j.paging.next : null;
+    }
   }
-  return out;
+  return Object.values(byId);
 }
 
 export default async function handler(req, res) {
@@ -39,9 +43,10 @@ export default async function handler(req, res) {
   if (!token || !act) { res.status(500).json({ error: "Meta 未配置（META_TOKEN / META_AD_ACCOUNT）" }); return; }
 
   const names = Array.isArray(body.names) && body.names.length ? body.names : DEFAULT_NAMES;
+  const keywords = Array.isArray(body.keywords) && body.keywords.length ? body.keywords : ["口播", "CC V2"];
 
   try {
-    const ads = await allAds(token, act);
+    const ads = await adsByKeywords(token, act, keywords);
     const matched = ads.filter((a) => names.some((n) => (a.name || "").includes(n)));
 
     const fields = "spend,impressions,inline_link_clicks,inline_link_click_ctr,actions,video_avg_time_watched_actions,video_thruplay_watched_actions,video_p100_watched_actions,video_play_actions";
