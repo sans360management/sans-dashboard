@@ -142,12 +142,13 @@ function UploadSales() {
   const [phase, setPhase] = useState("idle"); // idle | parsing | parsed | saving | done | error
   const [results, setResults] = useState([]); // [{date,total,n,branches}]
   const [err, setErr] = useState("");
+  const [sent, setSent] = useState(null); // Telegram Summary 发送状态
   const filesRef = useRef([]);
   const inputRef = useRef(null);
   useEffect(() => { filesRef.current = files; }, [files]);
   const pw = () => { try { return sessionStorage.getItem("sans_dash_pw") || ""; } catch (e) { return ""; } };
 
-  const reset = () => { setPhase("idle"); setResults([]); setErr(""); };
+  const reset = () => { setPhase("idle"); setResults([]); setErr(""); setSent(null); };
   const post = (payload) => fetch("/api/upload-sales", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password: pw(), ...payload }),
@@ -200,15 +201,21 @@ function UploadSales() {
   };
 
   const save = async () => {
-    setPhase("saving"); setErr("");
+    setPhase("saving"); setErr(""); setSent(null);
     try {
+      let lastSummary = null;
       for (const r of results) {
         const resp = await post({ action: "save-daily", date: r.date, branches: r.branches });
         const j = await resp.json();
         if (!resp.ok) throw new Error(r.date + "：" + (j.error || ("HTTP " + resp.status)));
+        lastSummary = j.summary || null;
       }
+      // 上传后自动发的 Telegram Summary 结果
+      if (lastSummary && lastSummary.success) setSent("ok");
+      else if (lastSummary && lastSummary.error === "Not enough data") setSent("nodata");
+      else if (lastSummary && (lastSummary.error || lastSummary.detail)) setSent("fail");
       setPhase("done");
-      setTimeout(() => window.location.reload(), 1300);
+      setTimeout(() => window.location.reload(), 2600);
     } catch (e) { setErr(e.message); setPhase("error"); }
   };
 
@@ -267,7 +274,12 @@ function UploadSales() {
             </div>
           ))}
           {phase === "done"
-            ? <div style={{ color: C.sage, fontWeight: 600, marginTop: 4 }}>Saved ✓ refreshing…</div>
+            ? <div style={{ marginTop: 4 }}>
+                <div style={{ color: C.sage, fontWeight: 600 }}>Saved ✓ refreshing…</div>
+                {sent === "ok" && <div style={{ color: C.sage, fontSize: 12, marginTop: 2 }}>📲 Summary 已发送到 Telegram</div>}
+                {sent === "nodata" && <div style={{ color: C.sub, fontSize: 12, marginTop: 2 }}>ℹ️ 只有一天数据，暂不发 Summary（需至少两天才能对比昨天）</div>}
+                {sent === "fail" && <div style={{ color: C.clay, fontSize: 12, marginTop: 2 }}>⚠️ Summary 发送失败（数据已保存）——请检查 Telegram 配置</div>}
+              </div>
             : <div className="flex gap-2" style={{ marginTop: 8 }}>
                 <button onClick={save} disabled={phase === "saving"} style={btn(C.brown, phase !== "saving")}>{phase === "saving" ? "Saving…" : (results.length > 1 ? `Confirm & Save ${results.length} days` : "Confirm & Save")}</button>
                 <button onClick={reset} style={{ border: `1px solid ${C.line}`, background: "transparent", color: C.sub, borderRadius: 10, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Cancel</button>

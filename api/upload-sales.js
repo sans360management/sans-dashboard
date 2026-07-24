@@ -250,7 +250,18 @@ export default async function handler(req, res) {
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || j.error) throw new Error(j.error || ("Apps Script HTTP " + r.status));
-      res.status(200).json({ ok: true, date, branches: branches.length });
+
+      // 保存成功后：自动触发 /api/send-report → 发一份 Telegram Summary（失败不影响保存本身）
+      let summary = null;
+      try {
+        const proto = req.headers["x-forwarded-proto"] || "https";
+        const host = req.headers["x-forwarded-host"] || req.headers.host;
+        const q = process.env.REPORT_KEY ? "?key=" + encodeURIComponent(process.env.REPORT_KEY) : "";
+        const sr = await fetch(`${proto}://${host}/api/send-report${q}`);
+        summary = await sr.json().catch(() => ({}));
+      } catch (e) { summary = { error: e.message }; }
+
+      res.status(200).json({ ok: true, date, branches: branches.length, summary });
       return;
     }
 

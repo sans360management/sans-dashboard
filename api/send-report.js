@@ -37,6 +37,26 @@ export default async function handler(req, res) {
     const y = daily[daily.length - 2];
     const sum = (day, f) => day ? day.branches.reduce((s, b) => s + (b[f] || 0), 0) : 0;
 
+    // 逐店：按分店名把「今天 vs 昨天」配对，算 New Lead Sales(first) / Consult / Enroll 的日增量
+    const branchMap = (day) => {
+      const m = {};
+      ((day && day.branches) || []).forEach((b) => { const k = String(b.branch || "").trim(); if (k) m[k] = b; });
+      return m;
+    };
+    const yMap = branchMap(y);
+    const perBranch = ((t.branches) || []).map((b) => {
+      const k = String(b.branch || "").trim();
+      const yb = yMap[k] || {};
+      return {
+        branch: k,
+        dFirst: (b.first || 0) - (yb.first || 0),
+        dConsult: (b.consult || 0) - (yb.consult || 0),
+        dEnrol: (b.enrol || 0) - (yb.enrol || 0),
+      };
+    }).filter((x) => x.branch);
+    // 只列「今天有变化」的分店，按 New Lead Sales 增长从高到低
+    const active = perBranch.filter((x) => x.dFirst || x.dConsult || x.dEnrol).sort((a, b) => b.dFirst - a.dFirst);
+
     const todaySales  = sum(t, 'today');
     const mtdSales    = sum(t, 'mtd');
     const mtdFirst    = sum(t, 'first');
@@ -58,6 +78,13 @@ export default async function handler(req, res) {
     const fmtNum = (n, dec=2) => Number(n).toLocaleString('en-MY', { minimumFractionDigits: dec, maximumFractionDigits: dec });
     const sign = (n) => n >= 0 ? '+' : '';
     const month = tM;
+
+    // 今日销售拆分：新客(New Lead Sales=first 日增量) vs 旧客(今日总收−新客)
+    const existingSales = todaySales - newLeads;
+    // 逐店明细行
+    const branchLines = active.length
+      ? active.map((x) => `• ${x.branch}: ${sign(x.dFirst)}${fmtNum(x.dFirst, 0)} | Consult ${sign(x.dConsult)}${x.dConsult} | Enroll ${sign(x.dEnrol)}${x.dEnrol}`).join('\n')
+      : '（今日各分店暂无变化）';
 
     const msg = `${month}月 Target - 2Mil
 🗓️ ${fmtDMY(t.date)}
@@ -82,7 +109,15 @@ Total Consult: ${sign(consult)}${consult}
 Total Enrolment: ${sign(enrol)}${enrol}
 ➖➖➖
 New Leads Sales 占 Total Sales 比例：
-${newLeadsPct}%`;
+${newLeadsPct}%
+➖➖➖
+🆕 今日销售拆分：
+New Sales（新客）: ${fmtNum(newLeads)}
+Existing Sales（旧客）: ${fmtNum(existingSales)}
+➖➖➖
+🏬 各分店（对比昨天 ${fmtDMY(y.date)}）
+New Lead Sales | +Consult | +Enroll
+${branchLines}`;
 
     const tgRes = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
