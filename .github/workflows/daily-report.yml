@@ -17,10 +17,3 @@ jobs:
           # 只输出 HTTP 状态码；非 2xx 会让这步失败(Actions 显示红色)
           curl -fsS -o /dev/null -w "HTTP %{http_code}\n" \
             "https://sans-dashboard-two.vercel.app/api/send-report?key=${{ secrets.REPORT_KEY }}"
-
-      - name: Trigger /api/ads-report (server sends Ads Report to Telegram)
-        if: always()   # 即使上面 Sales 那步失败，也照发 Ads Report
-        run: |
-          echo "Calling ads-report..."
-          curl -fsS -o /dev/null -w "HTTP %{http_code}\n" \
-            "https://sans-dashboard-two.vercel.app/api/ads-report?key=${{ secrets.REPORT_KEY }}"
