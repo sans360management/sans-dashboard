@@ -47,16 +47,11 @@ export default async function handler(req, res) {
     // 按老板锁定 Format 拼消息（全角空格用于对齐，务必保留）
     const msg =
       `📅 ${fmtDMY(d.date)}\n` +
-      `\n` +
       `Ads Spent (Total Msg)(Total Comment)\n` +
       `　${rm(d.adsSpent)}　(${int(d.totalMsg)})(${int(d.totalComment)})\n` +
-      `\n` +
       `Cost per Msg (${rm(d.costPerMsg)})\n` +
-      `\n` +
       `Messenger CPL (${rm(d.msgCPL)})　　Total Lead from Messenger (${int(d.msgLead)})\n` +
-      `\n` +
       `CPL (${rm(d.cpl)})\n` +
-      `\n` +
       `Total New Lead (${int(d.newLead)})　　Total LP Lead (${int(d.lpLead)})`;
 
     // 只测不发：?dry=1 返回拼好的文本，不发 Telegram（用于复核）
