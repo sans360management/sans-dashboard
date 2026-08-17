@@ -430,6 +430,9 @@ function SalesView({ dataVersion, gran }) {
         enrol: d ? d.total.enrol : (o.enrol != null ? o.enrol : null),
       };
     });
+    // 按月份顺序排（"Jul 26" → 202607），避免数据源顺序乱掉（如 Aug 排在 Jul 前）
+    const mkNum = (s) => { const p = String(s).split(" "); return (2000 + (parseInt(p[1], 10) || 0)) * 100 + (MNUM[p[0]] || 0); };
+    rows.sort((a, b) => mkNum(a.label) - mkNum(b.label));
     const total = rows.reduce((a, r) => ({
       mtd: a.mtd + (r.mtd || 0), first: a.first + (r.first || 0),
       consult: a.consult + (r.consult || 0), enrol: a.enrol + (r.enrol || 0),
