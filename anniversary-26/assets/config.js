@@ -10,15 +10,19 @@ window.SANS26_CONFIG = {
                 样式完全可控，按钮已是品牌橙）
      'iframe' = 直接嵌入 GHL 内建表单（样式受 GHL 限制）
   --------------------------------------------------------- */
-  formMode: 'custom',
+  formMode: 'iframe',
 
   /* formMode: 'custom' 时使用 —— GHL Workflow 的 Inbound Webhook URL
      留空 = 示范模式：可以走完整流程看画面，但不会送出资料 */
   ghlWebhookUrl: '',
 
   /* formMode: 'iframe' 时使用 —— GHL 表单的 Embed URL
-     （GHL → Sites → Forms → 选表单 → Integrate → 复制 iframe 的 src） */
-  ghlFormEmbedUrl: '',
+     （GHL → Sites → Forms → 选表单 → Integrate → 复制 iframe 的 src）
+
+     只有一份表单就填字串；想让 EN / 中文 各用一份表单，改成：
+       ghlFormEmbedUrl: { en: 'https://.../form/AAA', zh: 'https://.../form/BBB' },
+     切换语言时会自动换表单。 */
+  ghlFormEmbedUrl: 'https://api.qiai.tech/widget/form/DqxErWPgs2XWAdiGcVui',
 
   /* 送出成功后要不要跳转？留空 = 留在本页显示成功讯息 */
   redirectAfterSubmit: '',

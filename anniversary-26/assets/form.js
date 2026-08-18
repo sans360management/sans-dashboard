@@ -13,22 +13,97 @@
     } else { fn(); }
   }
 
-  /* ---------- 模式二：直接嵌入 GHL 内建表单 ---------- */
-  function useGhlIframe() {
+  /* ============================================================
+     模式二：直接嵌入 GHL 内建表单
+     ============================================================ */
+
+  /* ghlFormEmbedUrl 可以是一个网址字串，也可以是 { en, zh } 两份表单 */
+  function embedUrlFor(lang) {
+    var url = CONFIG.ghlFormEmbedUrl;
+    if (!url) return '';
+    if (typeof url === 'string') return url;
+    return url[lang] || url.en || url.zh || '';
+  }
+
+  /* 载入 GHL 官方的 form_embed.js —— 它负责依表单内容自动调整 iframe 高度。
+     白标网域优先，失败再退回官方网域。 */
+  function loadEmbedScript(formUrl) {
+    if (document.getElementById('ghl-embed-script')) return;
+
+    var origin;
+    try { origin = new URL(formUrl, location.href).origin; } catch (e) { return; }
+
+    var script = document.createElement('script');
+    script.id = 'ghl-embed-script';
+    script.src = origin + '/js/form_embed.js';
+    script.async = true;
+    script.onerror = function () {
+      var fallback = document.createElement('script');
+      fallback.src = 'https://link.msgsndr.com/js/form_embed.js';
+      fallback.async = true;
+      document.body.appendChild(fallback);
+    };
+    document.body.appendChild(script);
+  }
+
+  /* 备援：官方脚本没载入时，自己听 iframe 回报的高度 */
+  function listenForHeight(frame, formUrl) {
+    var origin;
+    try { origin = new URL(formUrl, location.href).origin; } catch (e) { return; }
+
+    window.addEventListener('message', function (e) {
+      if (e.origin !== origin) return;
+
+      var data = e.data;
+      var height = null;
+      if (typeof data === 'number') height = data;
+      else if (data && typeof data === 'object') height = data.height || (data.payload && data.payload.height);
+
+      height = parseInt(height, 10);
+      if (height > 200 && height < 6000) frame.style.height = height + 'px';
+    });
+  }
+
+  function useGhlIframe(lang) {
     var wrap = document.getElementById('form-iframe-wrap');
     var frame = document.getElementById('ghl-form');
     var custom = document.getElementById('form-card-body');
-    if (!wrap || !frame) return false;
+    var url = embedUrlFor(lang);
+    if (!wrap || !frame || !url) return false;
 
-    frame.src = CONFIG.ghlFormEmbedUrl;
+    // GHL 的 form_embed.js 靠这些属性认出 iframe，照它的格式给
+    var formId = (url.split('/').pop() || '').split('?')[0];
+    frame.id = 'inline-' + formId;
+    frame.setAttribute('data-layout', '{"id":"INLINE"}');
+    frame.setAttribute('data-trigger-type', 'alwaysShow');
+    frame.setAttribute('data-activation-type', 'alwaysActivated');
+    frame.setAttribute('data-deactivation-type', 'neverDeactivate');
+    frame.setAttribute('data-form-id', formId);
+    frame.setAttribute('data-layout-iframe-id', 'inline-' + formId);
+    frame.src = url;
+
     wrap.classList.remove('is-hidden');
     if (custom) custom.classList.add('is-hidden');
+
+    var card = wrap.closest('.form-card');
+    if (card) card.classList.add('is-iframe');
+
+    listenForHeight(frame, url);
+    loadEmbedScript(url);
+
+    // 切换语言时换成另一份表单（有设定 { en, zh } 才会换）
+    document.addEventListener('sans26:langchange', function (e) {
+      var next = embedUrlFor(e.detail.lang);
+      if (next && next !== frame.src) frame.src = next;
+    });
+
     return true;
   }
 
   ready(function () {
     if (CONFIG.formMode === 'iframe' && CONFIG.ghlFormEmbedUrl) {
-      if (useGhlIframe()) return;
+      // 嵌入失败（例如网址填错）就自动退回自订表单，画面不会开天窗
+      if (useGhlIframe(window.SANS26.getLang())) return;
     }
 
     var form = document.getElementById('rsvp-form');
