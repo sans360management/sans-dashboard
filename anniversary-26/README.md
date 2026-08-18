@@ -17,17 +17,20 @@ anniversary-26/
 
 ---
 
-## 1. 先放两张图（最重要）
+## 1. 图片（已完成）
 
-丢进 `assets/img/`，档名要一模一样：
+`assets/img/` 目前放着：
 
-| 档名 | 内容 | 建议规格 |
-|---|---|---|
-| `hero-poster.jpg` | 主视觉海报（the Legacy of Wellbeing） | 直式，宽 1200–1600px，压到 300KB 内 |
-| `logo.png` | Sans Wellness Logo | 透明底 PNG，高 ≥ 300px |
+| 档案 | 说明 |
+|---|---|
+| `KV.png` | 主视觉原始档（1420×2000，1.87MB）—— 保留备用，网页不直接用 |
+| `hero-poster.jpg` | 由 KV.png 压缩而来（1200×1690，211KB）—— **网页实际使用的是这张** |
+| `SW_LOGO-removebg-preview.png` | 品牌 Logo，透明底，页脚会自动转白 |
 
-**档案不在也不会破版** —— 首页会自动 fallback 到橙色「26」图形版。所以可以先上线、图片随后补。
-页脚 Logo 会自动转白，给深色版透明底 PNG 就好。
+要换主视觉：把新档丢进 `assets/img/`，改 `assets/config.js` 的 `images.poster` 路径即可。
+新图请先压到 300KB 以内再上传 —— 直接用几 MB 的原始档，手机开起来会明显变慢。
+
+档案万一遗失或路径打错，首页会自动 fallback 到橙色「26」图形版，不会破版。
 
 ---
 

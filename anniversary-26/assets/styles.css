@@ -181,11 +181,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  height: 74px;
+  height: 92px;
+  transition: height .25s ease;
 }
+/* 卷动后导览列收窄，Logo 同步缩小 */
+.nav.is-stuck .nav__inner { height: 70px; }
+.nav.is-stuck .brand__logo { height: 50px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand__logo { height: 46px; width: auto; }
-.brand__logo--light { height: 62px; filter: brightness(0) invert(1); opacity: .92; }
+.brand__logo { height: 70px; width: auto; transition: height .25s ease; }
+.brand__logo--light { height: 88px; filter: brightness(0) invert(1); opacity: .92; }
 .brand__fallback { display: flex; align-items: baseline; gap: 10px; }
 .brand__mark { font-family: var(--display); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.18em; }
 .brand__sub { font-size: 0.62rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--cocoa-45); }
@@ -699,8 +703,10 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   .btn-row { flex-direction: column; }
   .btn-row .btn { width: 100%; }
 
-  .nav__inner { height: 64px; }
-  .brand__logo { height: 38px; }
+  .nav__inner { height: 70px; }
+  .brand__logo { height: 50px; }
+  .nav.is-stuck .nav__inner { height: 58px; }
+  .nav.is-stuck .brand__logo { height: 40px; }
   .brand__sub { display: none; }
   .nav__actions { gap: 9px; }
   .nav .btn { padding: 10px 16px; font-size: 0.82rem; }

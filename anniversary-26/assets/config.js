@@ -67,7 +67,9 @@ window.SANS26_CONFIG = {
      自动 fallback 到橙色「26」图形版，不会破版。
   --------------------------------------------------------- */
   images: {
-    poster: 'assets/img/hero-poster.jpg',  // 主视觉海报
-    logo:   'assets/img/logo.png',         // 品牌 Logo（透明底 PNG）
+    // hero-poster.jpg 是由你上传的 KV.png 压缩而来（1.87MB → 211KB）
+    // 想换主视觉：丢新档进 assets/img/，把下面路径改掉即可
+    poster: 'assets/img/hero-poster.jpg',
+    logo:   'assets/img/SW_LOGO-removebg-preview.png',
   },
 };
