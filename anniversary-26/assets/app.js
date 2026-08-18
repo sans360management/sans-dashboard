@@ -8,6 +8,13 @@
   var DICT   = window.SANS26_I18N   || {};
   var CONFIG = window.SANS26_CONFIG || {};
   var STORE_KEY = 'sans26.lang';
+
+  /* 整段贴进 GHL 时，外层会包一个 <div id="sans26">。
+     有它就把所有查询限制在容器内，避免选到 GHL 自己的 .nav / .card 等元素；
+     独立网页时 SCOPE 为 null，行为跟原本完全一样。 */
+  var SCOPE = null;
+  var ROOT = document;
+  var FLAG = document.body;
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- 语言 ---------- */
@@ -42,38 +49,38 @@
     document.documentElement.lang = (lang === 'zh') ? 'zh-Hans' : 'en';
     document.documentElement.setAttribute('data-lang', lang);
 
-    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-i18n]').forEach(function (el) {
       var value = t(el.getAttribute('data-i18n'));
       if (value) el.textContent = value;
     });
 
-    document.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
       var value = t(el.getAttribute('data-i18n-ph'));
       if (value) el.setAttribute('placeholder', value);
     });
 
-    document.querySelectorAll('[data-i18n-alt]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-i18n-alt]').forEach(function (el) {
       var value = t(el.getAttribute('data-i18n-alt'));
       if (value) el.setAttribute('alt', value);
     });
 
-    document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-i18n-title]').forEach(function (el) {
       var value = t(el.getAttribute('data-i18n-title'));
       if (value) el.setAttribute('title', value);
     });
 
     // 活动资料（来自 config.js）
-    document.querySelectorAll('[data-event]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-event]').forEach(function (el) {
       var value = pick((CONFIG.event || {})[el.getAttribute('data-event')]);
       if (value) el.textContent = value;
     });
 
-    document.querySelectorAll('[data-lang-only]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-lang-only]').forEach(function (el) {
       el.style.display = (el.getAttribute('data-lang-only') === lang) ? '' : 'none';
     });
 
     // 邀请类别下拉
-    document.querySelectorAll('[data-category-select]').forEach(function (select) {
+    ROOT.querySelectorAll('[data-category-select]').forEach(function (select) {
       var current = select.value;
       var placeholder = select.querySelector('option[value=""]');
       select.textContent = '';
@@ -87,7 +94,7 @@
       select.value = current;
     });
 
-    document.querySelectorAll('[data-set-lang]').forEach(function (btn) {
+    ROOT.querySelectorAll('[data-set-lang]').forEach(function (btn) {
       btn.setAttribute('aria-pressed', String(btn.getAttribute('data-set-lang') === lang));
     });
 
@@ -176,7 +183,7 @@
 
   /* ---------- 数字滚动 ---------- */
   function initCountUp() {
-    var items = document.querySelectorAll('[data-countup]');
+    var items = ROOT.querySelectorAll('[data-countup]');
     if (!items.length) return;
 
     function run(el) {
@@ -227,24 +234,24 @@
   /* ---------- 联络资料 ---------- */
   function applyContact() {
     var c = CONFIG.contact || {};
-    document.querySelectorAll('[data-contact]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-contact]').forEach(function (el) {
       var value = c[el.getAttribute('data-contact')];
       if (value) el.textContent = value;
     });
-    document.querySelectorAll('[data-href-tel]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-href-tel]').forEach(function (el) {
       if (c.phone) el.href = 'tel:' + c.phone.replace(/[^\d+]/g, '');
     });
-    document.querySelectorAll('[data-href-mail]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-href-mail]').forEach(function (el) {
       if (c.email) el.href = 'mailto:' + c.email;
     });
-    document.querySelectorAll('[data-href-wa]').forEach(function (el) {
+    ROOT.querySelectorAll('[data-href-wa]').forEach(function (el) {
       if (c.whatsapp) el.href = 'https://wa.me/' + c.whatsapp.replace(/[^\d]/g, '');
     });
   }
 
   /* ---------- 导航吸顶 ---------- */
   function initNav() {
-    var nav = document.querySelector('.nav');
+    var nav = ROOT.querySelector('.nav');
     if (!nav) return;
     var onScroll = function () { nav.classList.toggle('is-stuck', window.scrollY > 8); };
     onScroll();
@@ -254,7 +261,7 @@
   /* ---------- 手机版固定登记列 ---------- */
   function initStickyCta() {
     var bar = document.getElementById('sticky-cta');
-    var hero = document.querySelector('.hero');
+    var hero = ROOT.querySelector('.hero');
     var rsvp = document.getElementById('rsvp');
     if (!bar || !hero) return;
 
@@ -269,7 +276,7 @@
 
   /* ---------- 滚动淡入 ---------- */
   function initReveal() {
-    var items = document.querySelectorAll('.reveal');
+    var items = ROOT.querySelectorAll('.reveal');
     if (!items.length) return;
 
     if (REDUCED || !('IntersectionObserver' in window)) {
@@ -307,6 +314,10 @@
   };
 
   function init() {
+    SCOPE = document.getElementById('sans26');
+    ROOT = SCOPE || document;
+    FLAG = SCOPE || document.body;
+
     applyLang();
     applyImages();
     applyContact();
@@ -317,7 +328,7 @@
     initCountUp();
     initStickyCta();
     initLangButtons();
-    document.body.classList.add('is-ready');
+    FLAG.classList.add('is-ready');
   }
 
   if (document.readyState === 'loading') {

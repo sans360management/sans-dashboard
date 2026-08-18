@@ -102,22 +102,52 @@ ghlFormEmbedUrl: '（GHL → Sites → Forms → Integrate → 复制 iframe 的
 
 ---
 
-## 4. 放进 GHL 的做法
+## 4. 放进 GHL
 
-三选一：
+### 打包指令
 
-**① GHL Funnel + Custom Code（一页搞定）**
-1. 先把 `assets/` 里的图片上传到 GHL **Media Library**，拿到公开网址
-2. 把 `config.js` 的 `images` 改成那些绝对网址
-3. 产生单档版（CSS/JS 全内嵌），整段贴进 Funnel 的 **Custom Code / HTML** element
-4. 把该 row 设成 full width、padding 归零
+```bash
+cd anniversary-26
+python3 build-ghl.py              # → dist/ghl-embed.html（82 KB，图片走网址）
+python3 build-ghl.py --embed-img  # → dist/ghl-embed-with-images.html（420 KB，图片内嵌）
+python3 build-single.py           # → dist/index.html（独立网页 / 预览用）
+```
 
-**② 外部主机 + GHL 只收资料（最省事）**
-把 `anniversary-26/` 丢上 Vercel / Netlify，网域指过去，表单照样 POST 进 GHL。
-样式 100% 可控，也不用跟 GHL 编辑器打架。
+`build-ghl.py` 跟 `build-single.py` 的差别，是它为了在 GHL 里存活多做了四件事：
 
-**③ 一般虚拟主机**
-FTP 上传整个资料夹即可。
+1. **拿掉 `<!doctype>/<html>/<head>/<body>`** —— GHL 的 Custom Code 只吃片段
+2. **所有类别自动加 `s26-` 前缀** —— GHL 本身也有 `.card` `.btn` `.nav` `.section`，
+   而且常常带 `!important`。光靠 CSS 作用域挡不住 `!important`，改名才是根治
+3. **CSS 全部限定在 `#sans26` 容器内** —— 我们的样式也不会外溢去弄乱 GHL 的元素
+4. **自动解开外层容器的 `overflow` / `transform`** —— 否则 GHL 的 row 会让吸顶导览列失效
+
+JS 的查询也会限定在容器内（`app.js` 里的 `SCOPE` / `ROOT`），所以不会选到 GHL 自己的元素。
+
+### 贴进 GHL 的步骤
+
+1. GHL → **Media Library** 上传 `hero-poster.jpg` 和 `SW_LOGO-removebg-preview.png`，各自复制网址
+2. 把 `assets/config.js` 的 `images` 改成那两个绝对网址
+3. 跑 `python3 build-ghl.py`，打开 `dist/ghl-embed.html`，**全选复制**
+4. GHL → Funnels → 新增一个 **Blank** 页面步骤
+5. 加一个 Row → 设成 **Full Width**，左右上下 padding 全部归零
+6. 在 Row 里加 **Custom JS/HTML** 元素，把刚才复制的内容整段贴进去
+7. Page Settings → 背景色设成 `#FDF6EC`（避免左右出现白边）
+8. Save → Preview → Publish
+
+> 懒得上传图片的话，直接用 `dist/ghl-embed-with-images.html`（图片已 base64 内嵌，
+> 不用改 config、不用 Media Library），代价是贴上去的内容从 82 KB 变成 420 KB。
+> GHL 编辑器处理这么大一段会有点顿，建议还是走 Media Library。
+
+### 贴完检查三件事
+
+- 吸顶导览列滚动时有没有跟着？（没有 → 该 Row 或 Section 还有 `overflow: hidden`，到设定里关掉）
+- 手机版底部的固定登记列有没有出现？
+- 表单有没有正常显示、高度有没有自动撑开？
+
+### 另一条路：外部主机 + GHL 只收资料
+
+把 `anniversary-26/` 整个丢上 Vercel / Netlify，网域指过去，表单照样送进 GHL。
+样式 100% 可控，不用跟编辑器打架，日后改版也只要重新部署 —— 不必再贴一次。
 
 本地预览：
 
