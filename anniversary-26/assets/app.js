@@ -111,14 +111,20 @@
   /* ---------- 图片（海报 / Logo）----------
      档案存在才显示；不存在就 fallback，不破版 */
   function applyImages() {
-    var imgs = CONFIG.images || {};
+    /* window.SANS26_IMAGES 优先 —— 贴进 GHL 后可以直接在那段程式码最上面
+       改网址，不必重新打包 */
+    var imgs = window.SANS26_IMAGES || CONFIG.images || {};
 
     var poster = document.getElementById('hero-poster');
     var art = document.getElementById('hero-art');
     if (poster && art) {
       if (imgs.poster) {
         poster.addEventListener('load', function () { art.classList.add('has-poster'); });
-        poster.addEventListener('error', function () { art.classList.remove('has-poster'); });
+        poster.addEventListener('error', function () {
+          art.classList.remove('has-poster');
+          console.warn('[Sans26] 主视觉载不到，已改用备用版。网址：',
+                       String(imgs.poster).slice(0, 120));
+        });
         poster.src = imgs.poster;
       }
     }
@@ -130,6 +136,10 @@
         logo.hidden = false;
         var fb = logo.parentNode.querySelector('.brand__fallback');
         if (fb) fb.hidden = true;
+      });
+      logo.addEventListener('error', function () {
+        console.warn('[Sans26] Logo 载不到，已改用文字版。网址：',
+                     String(imgs.logo).slice(0, 120));
       });
       logo.src = imgs.logo;
     });

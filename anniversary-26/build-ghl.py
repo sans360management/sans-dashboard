@@ -201,8 +201,23 @@ def build():
     # 原本 index.html 里那段设定年份的 inline script 已经包含在上面，移掉重复的
     body = re.sub(r'<script>document\.getElementById\(.year.\).*?</script>\s*', '', body, flags=re.S)
 
+    # 图片网址独立成一小段放最前面，贴进 GHL 后可以直接在那里改，不用重新打包
+    import json
+    cfg_imgs = dict(re.findall(r"(poster|logo):\s*'([^']+)'", read('assets/config.js')))
+    override = (
+        '<!-- ▼▼▼ 图片网址 —— 要换图改这两行就好，不用重新打包 ▼▼▼ -->\n'
+        '<script>\n'
+        'window.SANS26_IMAGES = {\n'
+        '  poster: %s,\n'
+        '  logo:   %s\n'
+        '};\n'
+        '</script>\n'
+        '<!-- ▲▲▲ 图片网址结束 ▲▲▲ -->\n\n'
+    ) % (json.dumps(cfg_imgs.get('poster', '')), json.dumps(cfg_imgs.get('logo', '')))
+
     fragment = (
         '<!-- ===== Sans Wellness · the Legacy of Wellbeing (26th Anniversary) ===== -->\n'
+        + override +
         '<style>\n@import url("%s");\n%s\n</style>\n\n'
         '<div id="sans26">\n%s\n</div>\n\n'
         '<script>\n%s\n</script>\n'
