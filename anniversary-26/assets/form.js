@@ -13,7 +13,24 @@
     } else { fn(); }
   }
 
+  /* ---------- 模式二：直接嵌入 GHL 内建表单 ---------- */
+  function useGhlIframe() {
+    var wrap = document.getElementById('form-iframe-wrap');
+    var frame = document.getElementById('ghl-form');
+    var custom = document.getElementById('form-card-body');
+    if (!wrap || !frame) return false;
+
+    frame.src = CONFIG.ghlFormEmbedUrl;
+    wrap.classList.remove('is-hidden');
+    if (custom) custom.classList.add('is-hidden');
+    return true;
+  }
+
   ready(function () {
+    if (CONFIG.formMode === 'iframe' && CONFIG.ghlFormEmbedUrl) {
+      if (useGhlIframe()) return;
+    }
+
     var form = document.getElementById('rsvp-form');
     if (!form) return;
 
@@ -137,9 +154,11 @@
         invited_by:         get('invited_by'),
 
         // 来源标记
-        event:        'Sans Wellness 26th Anniversary',
+        event:        'Sans Wellness 26th Anniversary — the Legacy of Wellbeing',
+        event_date:   '2026-09-04',
         form_language: window.SANS26.getLang(),
         source:       'Anniversary 26 Landing Page',
+        dress_code:   'White / Orange',
         page_url:     location.href,
         submitted_at: new Date().toISOString(),
       };
@@ -235,9 +254,9 @@
         'UID:sans26-' + Date.now() + '@sanswellness.com',
         'DTSTART:' + stamp(ev.startISO),
         'DTEND:' + stamp(ev.endISO || ev.startISO),
-        'SUMMARY:Sans Wellness 26th Anniversary Celebration',
+        'SUMMARY:Sans Wellness 26th Anniversary — the Legacy of Wellbeing',
         'LOCATION:' + (pick(ev.venue) + ', ' + pick(ev.address)).replace(/,/g, '\\,'),
-        'DESCRIPTION:We look forward to celebrating with you.',
+        'DESCRIPTION:Dress code: White / Orange. We look forward to celebrating with you.',
         'END:VEVENT',
         'END:VCALENDAR',
       ].join('\r\n');

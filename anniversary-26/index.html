@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sans Wellness · 26th Anniversary Celebration</title>
-<meta name="description" content="Twenty-six years of restoring energy. Join Sans Wellness for our 26th Anniversary Celebration — by invitation only.">
+<title>Sans Wellness · the Legacy of Wellbeing — 26th Anniversary</title>
+<meta name="description" content="Celebrating 26 years of inspiring healthier lives. Join Sans Wellness on 4 September 2026 at Kota Damansara — register your attendance.">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Sans Wellness · 26th Anniversary Celebration">
-<meta property="og:description" content="Twenty-six years of restoring energy. An evening of gratitude with the partners and friends who made it possible.">
+<meta property="og:title" content="Sans Wellness · the Legacy of Wellbeing — 26th Anniversary">
+<meta property="og:description" content="Celebrating 26 Years of Inspiring Healthier Lives · 4 September 2026 · Sans Wellness Kota Damansara">
+<meta property="og:image" content="assets/img/hero-poster.jpg">
 <meta name="theme-color" content="#F08321">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F08321'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='34' font-weight='700' fill='%23FFF' text-anchor='middle'%3E26%3C/text%3E%3C/svg%3E">
@@ -17,21 +18,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
+<body id="top">
 
 <!-- ══════════ NAV ══════════ -->
 <header class="nav">
   <div class="shell nav__inner">
-    <a class="brand" href="./">
-      <span class="brand__mark">SANS</span>
-      <span class="brand__sub" data-i18n="brand.sub">Wellness</span>
+    <a class="brand" href="#top">
+      <img class="brand__logo" id="brand-logo" alt="Sans Wellness" hidden>
+      <span class="brand__fallback">
+        <span class="brand__mark">SANS</span>
+        <span class="brand__sub" data-i18n="brand.sub">Since 2000</span>
+      </span>
     </a>
 
     <nav class="nav__links">
-      <a href="#story"     data-i18n="nav.about">The Story</a>
-      <a href="#pillars"   data-i18n="nav.pillars">Four Pillars</a>
-      <a href="#journey"   data-i18n="nav.journey">Journey</a>
-      <a href="#programme" data-i18n="nav.programme">Programme</a>
+      <a href="#highlights" data-i18n="nav.highlights">Highlights</a>
+      <a href="#legacy"     data-i18n="nav.legacy">The Legacy</a>
+      <a href="#venue"      data-i18n="nav.venue">Venue</a>
     </nav>
 
     <div class="nav__actions">
@@ -39,253 +42,350 @@
         <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
         <button type="button" data-set-lang="zh" aria-pressed="false">中文</button>
       </div>
-      <a class="btn btn--primary" href="register.html" data-keep-lang data-i18n="cta.rsvp">RSVP Now</a>
+      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvp">Register</a>
     </div>
   </div>
 </header>
 
 <!-- ══════════ HERO ══════════ -->
 <section class="hero">
-  <div class="hero__numeral" aria-hidden="true"><span>26</span></div>
+  <span class="hero__glow hero__glow--a" aria-hidden="true"></span>
+  <span class="hero__glow hero__glow--b" aria-hidden="true"></span>
 
   <div class="shell hero__inner">
-    <p class="hero__kicker" data-i18n="hero.kicker">Sans Wellness</p>
-    <h1 class="hero__title">
-      <span data-i18n="hero.title">Twenty-Six Years</span><br>
-      <em data-i18n="hero.titleAccent">of Wellness</em>
-    </h1>
-    <p class="hero__sub" data-i18n="hero.sub">Anniversary Celebration · By Invitation Only</p>
-    <p class="hero__lede" data-i18n="hero.lede">
-      Twenty-six years of restoring energy, one person at a time.
-    </p>
+    <h1 class="sr-only" data-i18n="hero.srTitle">Sans Wellness — the Legacy of Wellbeing, 26th Anniversary</h1>
+
+    <!-- 主视觉海报（放入 assets/img/hero-poster.jpg 后自动显示） -->
+    <figure class="hero__art" id="hero-art">
+      <img class="hero__poster" id="hero-poster" alt="" data-i18n-alt="hero.posterAlt">
+
+      <!-- 海报未放入时的 fallback -->
+      <div class="hero__fallback" aria-hidden="true">
+        <span class="hero__numeral">26</span>
+        <p class="hero__fbKicker" data-i18n="brand.name">Sans Wellness</p>
+        <p class="hero__fbTitle">
+          <em data-i18n="hero.fbTitle">the Legacy of</em>
+          <span data-i18n="hero.fbAccent">Wellbeing</span>
+        </p>
+        <p class="hero__fbEst" data-i18n="hero.est">Established Since 2000</p>
+      </div>
+    </figure>
+
+    <div class="hero__copy">
+    <p class="hero__tagline" data-i18n="hero.tagline">Celebrating 26 Years of Inspiring Healthier Lives</p>
 
     <div class="facts">
       <span class="fact">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
-        <span data-event="date">To Be Confirmed</span>
+        <span data-event="date">Friday, 4 September 2026</span>
       </span>
       <span class="fact">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        <span data-event="time">6:30 PM — 10:30 PM</span>
+        <span data-event="time">10:00 AM — 6:00 PM</span>
       </span>
       <span class="fact">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span data-event="venue">To Be Confirmed</span>
+        <span data-event="venue">Sans Wellness Kota Damansara</span>
       </span>
     </div>
 
-    <div class="btn-row">
-      <a class="btn btn--primary" href="register.html" data-keep-lang data-i18n="cta.rsvpLong">Reserve My Seat</a>
-      <a class="btn btn--ghost" href="#story" data-i18n="cta.details">View Details</a>
+    <!-- 倒数计时 -->
+    <div class="cd" id="countdown">
+      <p class="cd__title" data-i18n="cd.title">Counting down to the day</p>
+      <div class="cd__grid" id="cd-grid">
+        <div class="cd__unit"><span class="cd__num" data-cd="days">--</span><span class="cd__lbl" data-i18n="cd.days">Days</span></div>
+        <div class="cd__unit"><span class="cd__num" data-cd="hours">--</span><span class="cd__lbl" data-i18n="cd.hours">Hours</span></div>
+        <div class="cd__unit"><span class="cd__num" data-cd="mins">--</span><span class="cd__lbl" data-i18n="cd.mins">Minutes</span></div>
+        <div class="cd__unit"><span class="cd__num" data-cd="secs">--</span><span class="cd__lbl" data-i18n="cd.secs">Seconds</span></div>
+      </div>
+      <p class="cd__msg" id="cd-msg"></p>
     </div>
-  </div>
 
-  <!-- 四大支柱 -->
-  <div class="pillars">
-    <div class="pillar">
-      <div class="pillar__cap"></div><div class="pillar__shaft"></div><div class="pillar__base"></div>
-      <p class="pillar__num">01</p>
-      <p class="pillar__label" data-i18n="pillar.1.label">Heritage</p>
-      <p class="pillar__desc" data-i18n="pillar.1.desc">Since 2000</p>
+    <div class="btn-row">
+      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvpLong">Reserve My Place</a>
+      <a class="btn btn--ghost" href="#highlights" data-i18n="cta.highlights">See Highlights</a>
     </div>
-    <div class="pillar">
-      <div class="pillar__cap"></div><div class="pillar__shaft"></div><div class="pillar__base"></div>
-      <p class="pillar__num">02</p>
-      <p class="pillar__label" data-i18n="pillar.2.label">Science</p>
-      <p class="pillar__desc" data-i18n="pillar.2.desc">Genkilogy</p>
-    </div>
-    <div class="pillar">
-      <div class="pillar__cap"></div><div class="pillar__shaft"></div><div class="pillar__base"></div>
-      <p class="pillar__num">03</p>
-      <p class="pillar__label" data-i18n="pillar.3.label">Care</p>
-      <p class="pillar__desc" data-i18n="pillar.3.desc">Therapist-led</p>
-    </div>
-    <div class="pillar">
-      <div class="pillar__cap"></div><div class="pillar__shaft"></div><div class="pillar__base"></div>
-      <p class="pillar__num">04</p>
-      <p class="pillar__label" data-i18n="pillar.4.label">Community</p>
-      <p class="pillar__desc" data-i18n="pillar.4.desc">12 Outlets</p>
-    </div>
+    </div><!-- /hero__copy -->
   </div>
-  <div class="hero__ground"></div>
 </section>
 
-<!-- ══════════ STORY ══════════ -->
-<section class="section" id="story">
+<!-- ══════════ HIGHLIGHTS ══════════ -->
+<section class="section" id="highlights" style="background:linear-gradient(180deg,var(--cream-2),var(--cream-1))">
+  <div class="shell">
+    <div class="center reveal" style="margin-bottom:clamp(32px,5vw,52px)">
+      <div class="rule"><span></span></div>
+      <p class="eyebrow" data-i18n="hl.eyebrow">What Awaits You</p>
+      <h2 class="h-section" data-i18n="hl.title">Four reasons to be there</h2>
+      <p class="lede" data-i18n="hl.lede">One day, four ways to experience twenty-six years of Sans.</p>
+    </div>
+
+    <div class="grid grid--4">
+      <article class="card card--hl reveal">
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.4 5.4L20 9.6l-4 4 1 5.9-5-2.8-5 2.8 1-5.9-4-4 5.6-1.2Z"/></svg></div>
+        <p class="card__tag" data-i18n="hl.1.tag">Grand Launch</p>
+        <h3 class="h-card" data-i18n="hl.1.title">Alpha Signature Genkilogy</h3>
+        <p data-i18n="hl.1.body">Our newest signature protocol makes its debut.</p>
+      </article>
+
+      <article class="card card--hl reveal">
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7ZM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7Z"/></svg></div>
+        <p class="card__tag" data-i18n="hl.2.tag">Limited-time</p>
+        <h3 class="h-card" data-i18n="hl.2.title">Wellness Privileges</h3>
+        <p data-i18n="hl.2.body">Anniversary-only privileges, while slots last.</p>
+      </article>
+
+      <article class="card card--hl reveal">
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18M3.5 9h17M3.5 15h17"/></svg></div>
+        <p class="card__tag" data-i18n="hl.3.tag">Holistic</p>
+        <h3 class="h-card" data-i18n="hl.3.title">Wellness Festival</h3>
+        <p data-i18n="hl.3.body">A full day of holistic wellness.</p>
+      </article>
+
+      <article class="card card--hl reveal">
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5c0 5-7 9.5-7 9.5Z"/></svg></div>
+        <p class="card__tag" data-i18n="hl.4.tag">Exclusive</p>
+        <h3 class="h-card" data-i18n="hl.4.title">Anniversary Experiences</h3>
+        <p data-i18n="hl.4.body">Curated experiences for registered guests.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ LEGACY ══════════ -->
+<section class="section" id="legacy">
   <div class="shell">
     <div class="grid grid--2" style="align-items:center">
       <div class="reveal">
-        <p class="eyebrow" data-i18n="story.eyebrow">The Story</p>
-        <h2 class="h-section" data-i18n="story.title">It started with one question</h2>
-        <p class="lede" data-i18n="story.p1">Why do so many people accept feeling tired as normal?</p>
-        <p class="lede" data-i18n="story.p2">Twenty-six years later the answer has grown.</p>
+        <p class="eyebrow" data-i18n="lg.eyebrow">The Legacy</p>
+        <h2 class="h-section" data-i18n="lg.title">Twenty-six years of inspiring healthier lives</h2>
+        <p class="lede" data-i18n="lg.p1">Since 2000, Sans Wellness has had one purpose.</p>
+        <p class="lede" data-i18n="lg.p2">This anniversary is our way of saying thank you.</p>
       </div>
 
       <div class="grid reveal" style="gap:16px">
         <div class="card">
-          <p class="h-card" style="color:var(--orange);font-size:2.4rem;margin-bottom:2px">26</p>
-          <p style="font-weight:600;color:var(--cocoa)" data-i18n="story.stat1">Years</p>
-          <p data-i18n="story.stat1Label">Of continuous practice</p>
+          <p class="stat" data-countup="26">26</p>
+          <p class="stat__unit" data-i18n="lg.stat1">Years</p>
+          <p data-i18n="lg.stat1Label">Of continuous practice</p>
         </div>
         <div class="card">
-          <p class="h-card" style="color:var(--orange);font-size:2.4rem;margin-bottom:2px">12</p>
-          <p style="font-weight:600;color:var(--cocoa)" data-i18n="story.stat2">Outlets</p>
-          <p data-i18n="story.stat2Label">Across Malaysia</p>
+          <p class="stat" data-countup="12">12</p>
+          <p class="stat__unit" data-i18n="lg.stat2">Outlets</p>
+          <p data-i18n="lg.stat2Label">Across Malaysia</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════ PILLARS ══════════ -->
-<section class="section" id="pillars" style="background:linear-gradient(180deg,var(--cream-1),var(--cream-2))">
-  <div class="shell">
-    <div class="center reveal" style="margin-bottom:48px">
-      <div class="rule"><span></span></div>
-      <p class="eyebrow" data-i18n="pillars.eyebrow">What Holds Us Up</p>
-      <h2 class="h-section" data-i18n="pillars.title">Four pillars, twenty-six years</h2>
-      <p class="lede" data-i18n="pillars.lede">Everything Sans has built rests on the same four foundations.</p>
-    </div>
-
-    <div class="grid grid--4">
-      <article class="card reveal">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg></div>
-        <h3 class="h-card" data-i18n="pillar.1.label">Heritage</h3>
-        <p data-i18n="pillars.1.body">A quarter century of craft.</p>
-      </article>
-      <article class="card reveal">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a3 3 0 0 0 2.6 4.5h10.8A3 3 0 0 0 20 18l-5-9V3M9 3h6M7.5 14h9"/></svg></div>
-        <h3 class="h-card" data-i18n="pillar.2.label">Science</h3>
-        <p data-i18n="pillars.2.body">Genkilogy turns intuition into protocol.</p>
-      </article>
-      <article class="card reveal">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5c0 5-7 9.5-7 9.5Z"/></svg></div>
-        <h3 class="h-card" data-i18n="pillar.3.label">Care</h3>
-        <p data-i18n="pillars.3.body">Every plan begins with a consultation.</p>
-      </article>
-      <article class="card reveal">
-        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3 3 0 0 1 0 5M18 20a5.5 5.5 0 0 0-3-4.9"/></svg></div>
-        <h3 class="h-card" data-i18n="pillar.4.label">Community</h3>
-        <p data-i18n="pillars.4.body">Twelve outlets, one extended family.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ JOURNEY ══════════ -->
-<section class="section" id="journey">
-  <div class="shell">
-    <div class="grid grid--2" style="gap:clamp(24px,5vw,72px)">
-      <div class="reveal">
-        <p class="eyebrow" data-i18n="journey.eyebrow">The Journey</p>
-        <h2 class="h-section" data-i18n="journey.title">Twenty-six years, in short</h2>
-      </div>
-
-      <div class="timeline reveal">
-        <div class="tl">
-          <p class="tl__year">2000</p>
-          <p class="tl__text" data-i18n="journey.2000">The first Sans outlet opens.</p>
-        </div>
-        <div class="tl">
-          <p class="tl__year">2008</p>
-          <p class="tl__text" data-i18n="journey.2008">Expansion across the Klang Valley.</p>
-        </div>
-        <div class="tl">
-          <p class="tl__year">2015</p>
-          <p class="tl__text" data-i18n="journey.2015">Genkilogy is formalised.</p>
-        </div>
-        <div class="tl">
-          <p class="tl__year">2020</p>
-          <p class="tl__text" data-i18n="journey.2020">Through the hardest years.</p>
-        </div>
-        <div class="tl">
-          <p class="tl__year">2026</p>
-          <p class="tl__text" data-i18n="journey.2026">Twelve outlets. Twenty-six years.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ QUOTE ══════════ -->
-<section class="section section--tight quote">
+<!-- ══════════ AGENDA（待补）══════════ -->
+<section class="section section--tight quote" id="agenda">
   <div class="shell center reveal">
-    <div class="rule"><span></span></div>
-    <blockquote data-i18n="quote.text">We never sold treatments. We restored energy.</blockquote>
-    <cite data-i18n="quote.cite">Sans Wellness · Founding Belief</cite>
+    <p class="eyebrow" data-i18n="ag.eyebrow">Programme</p>
+    <h2 class="h-section" style="font-size:clamp(1.6rem,3vw,2.3rem)" data-i18n="ag.title">Full programme to be announced</h2>
+    <p class="lede" data-i18n="ag.body">The run-sheet for the day is being finalised.</p>
+    <p class="pill" data-i18n="ag.window">Doors open 10:00 AM · Closes 6:00 PM</p>
   </div>
 </section>
 
-<!-- ══════════ PROGRAMME ══════════ -->
-<section class="section" id="programme">
+<!-- ══════════ VENUE ══════════ -->
+<section class="section" id="venue">
   <div class="shell">
-    <div class="center reveal" style="margin-bottom:40px">
-      <p class="eyebrow" data-i18n="prog.eyebrow">The Evening</p>
-      <h2 class="h-section" data-i18n="prog.title">Programme of the night</h2>
-      <p class="lede" data-i18n="prog.lede">Indicative timings.</p>
-    </div>
+    <div class="grid grid--2" style="gap:clamp(24px,4vw,56px);align-items:center">
+      <div class="reveal">
+        <p class="eyebrow" data-i18n="vn.eyebrow">Venue</p>
+        <h2 class="h-section" data-i18n="vn.title">Where it happens</h2>
+        <p class="h-card" style="margin-bottom:6px" data-event="venue">Sans Wellness Kota Damansara</p>
+        <p class="lede" style="margin-bottom:20px" data-event="address">32-1, Jalan PJU 5/16, Dataran Sunway Kota Damansara, 47810 Petaling Jaya, Selangor</p>
 
-    <div class="agenda reveal">
-      <div class="agenda__row">
-        <div class="agenda__time">6:30 PM</div>
-        <div>
-          <p class="agenda__title" data-i18n="prog.1.t">Registration &amp; Welcome Reception</p>
-          <p class="agenda__note" data-i18n="prog.1.n">Guest check-in and welcome drinks.</p>
+        <p class="note-line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+          <span data-i18n="vn.note">Parking and travel directions will be sent to you after you register.</span>
+        </p>
+        <p class="note-line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1.5 5.5a5.5 5.5 0 0 1-9 0Z"/><path d="M9 21h6M12 14v7"/></svg>
+          <span data-i18n="vn.dressNote">Dress code: White / Orange — the colours of the day.</span>
+        </p>
+
+        <div class="btn-row" style="margin-top:24px">
+          <a class="btn btn--ghost" id="map-link" href="#" target="_blank" rel="noopener" data-i18n="cta.directions">Open in Google Maps</a>
         </div>
       </div>
-      <div class="agenda__row">
-        <div class="agenda__time">7:15 PM</div>
-        <div>
-          <p class="agenda__title" data-i18n="prog.2.t">Opening &amp; Founder’s Address</p>
-          <p class="agenda__note" data-i18n="prog.2.n">Twenty-six years in the founder’s own words.</p>
-        </div>
-      </div>
-      <div class="agenda__row">
-        <div class="agenda__time">7:45 PM</div>
-        <div>
-          <p class="agenda__title" data-i18n="prog.3.t">Anniversary Dinner</p>
-          <p class="agenda__note" data-i18n="prog.3.n">Seated dinner service begins.</p>
-        </div>
-      </div>
-      <div class="agenda__row">
-        <div class="agenda__time">8:30 PM</div>
-        <div>
-          <p class="agenda__title" data-i18n="prog.4.t">Partner &amp; Long Service Awards</p>
-          <p class="agenda__note" data-i18n="prog.4.n">Honouring the people who carried us here.</p>
-        </div>
-      </div>
-      <div class="agenda__row">
-        <div class="agenda__time">9:15 PM</div>
-        <div>
-          <p class="agenda__title" data-i18n="prog.5.t">Live Performance</p>
-          <p class="agenda__note" data-i18n="prog.5.n">Entertainment segment and lucky draw.</p>
-        </div>
-      </div>
-      <div class="agenda__row">
-        <div class="agenda__time">10:00 PM</div>
-        <div>
-          <p class="agenda__title" data-i18n="prog.6.t">Toast &amp; Close</p>
-          <p class="agenda__note" data-i18n="prog.6.n">A toast to the next twenty-six.</p>
-        </div>
+
+      <div class="map-frame reveal">
+        <iframe id="venue-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                data-i18n-title="vn.mapTitle" title="Map"></iframe>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ══════════ CTA BAND ══════════ -->
-<section class="section cta-band" id="rsvp">
+<section class="section section--tight cta-band">
   <div class="shell center reveal">
-    <p class="eyebrow" data-i18n="band.eyebrow">By Invitation Only</p>
-    <h2 class="h-section" data-i18n="band.title">We would be honoured to have you</h2>
-    <p class="lede" data-i18n="band.lede">Seats are limited and allocated by invitation.</p>
+    <p class="eyebrow" data-i18n="band.eyebrow">Registration Open</p>
+    <h2 class="h-section" data-i18n="band.title">We would love to celebrate with you</h2>
+    <p class="lede" data-i18n="band.lede">Places are limited.</p>
     <div class="btn-row">
-      <a class="btn btn--primary" href="register.html" data-keep-lang data-i18n="cta.rsvpLong">Reserve My Seat</a>
+      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvpLong">Reserve My Place</a>
       <a class="btn btn--ghost" href="#" data-href-wa target="_blank" rel="noopener" data-i18n="foot.whatsapp">WhatsApp us</a>
     </div>
-    <p style="margin:26px 0 0;font-size:.86rem;color:rgba(255,255,255,.85)">
-      <span data-i18n="band.deadline">Kindly RSVP by</span>
-      <strong data-event="rsvpBy">To Be Confirmed</strong>
-    </p>
+  </div>
+</section>
+
+<!-- ══════════ REGISTRATION ══════════ -->
+<section class="section" id="rsvp" style="background:linear-gradient(180deg,var(--cream-1),var(--cream-2))">
+  <div class="shell">
+
+    <div class="center" style="margin-bottom:clamp(30px,5vw,52px)">
+      <p class="eyebrow" data-i18n="reg.eyebrow">Guest Registration</p>
+      <h2 class="h-display" data-i18n="reg.title">Register your attendance</h2>
+      <p class="lede" data-i18n="reg.lede">Complete the form below.</p>
+    </div>
+
+    <div class="form-wrap">
+
+      <!-- 左：活动详情 -->
+      <aside class="form-aside">
+        <p class="eyebrow" data-i18n="reg.asideTitle">Event Details</p>
+        <dl>
+          <div>
+            <dt data-i18n="reg.aDate">Date</dt>
+            <dd data-event="date">Friday, 4 September 2026</dd>
+          </div>
+          <div>
+            <dt data-i18n="reg.aTime">Time</dt>
+            <dd data-event="time">10:00 AM — 6:00 PM</dd>
+          </div>
+          <div>
+            <dt data-i18n="reg.aVenue">Venue</dt>
+            <dd data-event="venue">Sans Wellness Kota Damansara</dd>
+            <dd class="muted" style="font-size:.88rem" data-event="address">32-1, Jalan PJU 5/16, Kota Damansara</dd>
+          </div>
+          <div>
+            <dt data-i18n="reg.aDress">Dress Code</dt>
+            <dd data-event="dress">White / Orange</dd>
+          </div>
+          <div>
+            <dt data-i18n="reg.aRsvp">Register By</dt>
+            <dd data-event="rsvpBy">To Be Confirmed</dd>
+          </div>
+        </dl>
+
+        <div style="border-top:1px solid var(--cocoa-14);margin-top:24px;padding-top:20px">
+          <p class="eyebrow eyebrow--muted" style="margin-bottom:10px" data-i18n="foot.contactTitle">Enquiries</p>
+          <p style="margin:0 0 6px;font-size:.92rem"><a href="#" data-href-tel data-contact="phone">+60 12-000 0000</a></p>
+          <p style="margin:0;font-size:.92rem"><a href="#" data-href-mail data-contact="email">events@sanswellness.com</a></p>
+        </div>
+      </aside>
+
+      <!-- 右：表单 -->
+      <section class="form-card">
+
+        <!-- formMode: 'iframe' 时显示 GHL 内建表单 -->
+        <div id="form-iframe-wrap" class="is-hidden">
+          <iframe id="ghl-form" title="Registration form"></iframe>
+        </div>
+
+        <div id="form-card-body">
+          <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+
+          <form id="rsvp-form" novalidate>
+
+            <div class="field">
+              <label for="full_name"><span data-i18n="f.name">Full Name</span><span class="req">*</span></label>
+              <input type="text" id="full_name" name="full_name" autocomplete="name"
+                     data-required data-i18n-ph="f.namePh" placeholder="As it should appear on your name tag">
+              <p class="err"></p>
+            </div>
+
+            <div class="field">
+              <label for="phone_local"><span data-i18n="f.phone">Mobile Phone</span><span class="req">*</span></label>
+              <div class="phone-group">
+                <select id="phone_dial" name="phone_dial" aria-label="Country code">
+                  <option value="+60" selected>+60</option>
+                  <option value="+65">+65</option>
+                  <option value="+62">+62</option>
+                  <option value="+66">+66</option>
+                  <option value="+86">+86</option>
+                  <option value="+852">+852</option>
+                  <option value="+886">+886</option>
+                  <option value="+61">+61</option>
+                  <option value="+44">+44</option>
+                  <option value="+1">+1</option>
+                </select>
+                <input type="tel" id="phone_local" name="phone_local" autocomplete="tel-national"
+                       data-required data-i18n-ph="f.phonePh" placeholder="12 345 6789">
+              </div>
+              <p class="hint" data-i18n="f.phoneHint">We will send your confirmation here via WhatsApp.</p>
+              <p class="err"></p>
+            </div>
+
+            <div class="field">
+              <label for="email"><span data-i18n="f.email">Email Address</span><span class="req">*</span></label>
+              <input type="email" id="email" name="email" autocomplete="email"
+                     data-required data-i18n-ph="f.emailPh" placeholder="you@company.com">
+              <p class="err"></p>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="company"><span data-i18n="f.company">Company / Organisation</span><span class="req">*</span></label>
+                <input type="text" id="company" name="company" autocomplete="organization"
+                       data-required data-i18n-ph="f.companyPh" placeholder="Company name">
+                <p class="err"></p>
+              </div>
+
+              <div class="field">
+                <label for="designation"><span data-i18n="f.designation">Designation</span><span class="req">*</span></label>
+                <input type="text" id="designation" name="designation" autocomplete="organization-title"
+                       data-required data-i18n-ph="f.designationPh" placeholder="e.g. Managing Director">
+                <p class="err"></p>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="invitation_category"><span data-i18n="f.category">Invitation Category</span><span class="req">*</span></label>
+              <select id="invitation_category" name="invitation_category" data-required data-category-select>
+                <option value="" data-i18n="f.categoryPh">Please select</option>
+              </select>
+              <p class="err"></p>
+            </div>
+
+            <div class="field">
+              <label for="invited_by"><span data-i18n="f.invitedBy">Invited By</span><span class="req">*</span></label>
+              <input type="text" id="invited_by" name="invited_by"
+                     data-required data-i18n-ph="f.invitedByPh" placeholder="Name of the person who invited you">
+              <p class="hint" data-i18n="f.invitedByHint">This helps us look after you on the day.</p>
+              <p class="err"></p>
+            </div>
+
+            <!-- 蜜罐（防机器人，勿删）-->
+            <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+            <button type="submit" id="form-submit" class="btn btn--primary btn--block" data-i18n="f.submit">
+              Confirm My Registration
+            </button>
+
+            <p class="form-note" data-i18n="f.privacy">Your details are used solely for this event.</p>
+          </form>
+        </div>
+
+        <!-- 成功画面 -->
+        <div id="form-success" class="success">
+          <div class="success__tick">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <h3 class="h-section" style="font-size:clamp(1.6rem,3vw,2.1rem)" data-i18n="ok.title">You’re registered</h3>
+          <p class="lede" style="margin-inline:auto" data-i18n="ok.lede">Thank you.</p>
+          <div class="btn-row" style="justify-content:center">
+            <a class="btn btn--primary is-hidden" id="add-to-calendar" href="#" data-i18n="ok.addCal">Add to Calendar</a>
+            <a class="btn btn--ghost" href="#" data-href-wa target="_blank" rel="noopener" data-i18n="foot.whatsapp">WhatsApp us</a>
+          </div>
+        </div>
+
+      </section>
+    </div>
   </div>
 </section>
 
@@ -295,19 +395,22 @@
     <div class="footer__grid">
       <div>
         <div class="brand" style="margin-bottom:12px">
-          <span class="brand__mark">SANS</span>
-          <span class="brand__sub" data-i18n="brand.sub">Wellness</span>
+          <img class="brand__logo brand__logo--light" id="brand-logo-footer" alt="Sans Wellness" hidden>
+          <span class="brand__fallback">
+            <span class="brand__mark">SANS</span>
+            <span class="brand__sub" data-i18n="brand.sub">Since 2000</span>
+          </span>
         </div>
-        <p style="margin:0;max-width:34ch" data-i18n="hero.sub">Anniversary Celebration · By Invitation Only</p>
+        <p style="margin:0;max-width:34ch" data-i18n="hero.tagline">Celebrating 26 Years of Inspiring Healthier Lives</p>
       </div>
 
       <div>
         <h4 data-i18n="foot.eventTitle">The Event</h4>
         <ul class="footer__list">
-          <li data-event="date">To Be Confirmed</li>
-          <li data-event="time">6:30 PM — 10:30 PM</li>
-          <li data-event="venue">To Be Confirmed</li>
-          <li data-event="dress">Formal / Cocktail</li>
+          <li data-event="date">Friday, 4 September 2026</li>
+          <li data-event="time">10:00 AM — 6:00 PM</li>
+          <li data-event="venue">Sans Wellness Kota Damansara</li>
+          <li data-event="dress">White / Orange</li>
         </ul>
       </div>
 
@@ -324,14 +427,24 @@
 
     <div class="footer__bottom">
       <span>&copy; <span id="year">2026</span> <span data-i18n="foot.rights">Sans Wellness. All rights reserved.</span></span>
-      <span data-i18n="foot.note">This invitation is non-transferable.</span>
+      <span data-i18n="foot.note">Registration is required for entry.</span>
     </div>
   </div>
 </footer>
 
+<!-- 手机版固定登记列 -->
+<div class="sticky-cta" id="sticky-cta" hidden>
+  <div class="sticky-cta__info">
+    <strong data-event="date">4 September 2026</strong>
+    <span data-event="venue">Kota Damansara</span>
+  </div>
+  <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvp">Register</a>
+</div>
+
 <script src="assets/config.js"></script>
 <script src="assets/i18n.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/form.js"></script>
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>

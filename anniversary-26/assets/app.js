@@ -1,6 +1,6 @@
 /* ============================================================
-   Sans Wellness 26th Anniversary — 共用逻辑
-   语言切换 / 活动资料注入 / 导航 / 滚动动画
+   Sans Wellness · the Legacy of Wellbeing — 共用逻辑
+   语言切换 / 图片 / 倒数 / 数字滚动 / 地图 / 滚动动画
    ============================================================ */
 (function () {
   'use strict';
@@ -8,6 +8,7 @@
   var DICT   = window.SANS26_I18N   || {};
   var CONFIG = window.SANS26_CONFIG || {};
   var STORE_KEY = 'sans26.lang';
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- 语言 ---------- */
   function detectLang() {
@@ -41,16 +42,24 @@
     document.documentElement.lang = (lang === 'zh') ? 'zh-Hans' : 'en';
     document.documentElement.setAttribute('data-lang', lang);
 
-    // 文字内容
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       var value = t(el.getAttribute('data-i18n'));
       if (value) el.textContent = value;
     });
 
-    // placeholder
     document.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
       var value = t(el.getAttribute('data-i18n-ph'));
       if (value) el.setAttribute('placeholder', value);
+    });
+
+    document.querySelectorAll('[data-i18n-alt]').forEach(function (el) {
+      var value = t(el.getAttribute('data-i18n-alt'));
+      if (value) el.setAttribute('alt', value);
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      var value = t(el.getAttribute('data-i18n-title'));
+      if (value) el.setAttribute('title', value);
     });
 
     // 活动资料（来自 config.js）
@@ -59,7 +68,6 @@
       if (value) el.textContent = value;
     });
 
-    // 只在特定语言显示的元素
     document.querySelectorAll('[data-lang-only]').forEach(function (el) {
       el.style.display = (el.getAttribute('data-lang-only') === lang) ? '' : 'none';
     });
@@ -79,7 +87,6 @@
       select.value = current;
     });
 
-    // 语言按钮状态
     document.querySelectorAll('[data-set-lang]').forEach(function (btn) {
       btn.setAttribute('aria-pressed', String(btn.getAttribute('data-set-lang') === lang));
     });
@@ -94,13 +101,135 @@
     applyLang();
   }
 
-  /* ---------- 联络资料注入 ---------- */
+  /* ---------- 图片（海报 / Logo）----------
+     档案存在才显示；不存在就 fallback，不破版 */
+  function applyImages() {
+    var imgs = CONFIG.images || {};
+
+    var poster = document.getElementById('hero-poster');
+    var art = document.getElementById('hero-art');
+    if (poster && art) {
+      if (imgs.poster) {
+        poster.addEventListener('load', function () { art.classList.add('has-poster'); });
+        poster.addEventListener('error', function () { art.classList.remove('has-poster'); });
+        poster.src = imgs.poster;
+      }
+    }
+
+    ['brand-logo', 'brand-logo-footer'].forEach(function (id) {
+      var logo = document.getElementById(id);
+      if (!logo || !imgs.logo) return;
+      logo.addEventListener('load', function () {
+        logo.hidden = false;
+        var fb = logo.parentNode.querySelector('.brand__fallback');
+        if (fb) fb.hidden = true;
+      });
+      logo.src = imgs.logo;
+    });
+  }
+
+  /* ---------- 倒数计时 ---------- */
+  function initCountdown() {
+    var box = document.getElementById('countdown');
+    if (!box) return;
+
+    var ev = CONFIG.event || {};
+    if (!ev.startISO) { box.hidden = true; return; }
+
+    var start = new Date(ev.startISO).getTime();
+    var end = new Date(ev.endISO || ev.startISO).getTime();
+    if (isNaN(start)) { box.hidden = true; return; }
+
+    var grid = document.getElementById('cd-grid');
+    var msg = document.getElementById('cd-msg');
+    var cells = {};
+    box.querySelectorAll('[data-cd]').forEach(function (el) {
+      cells[el.getAttribute('data-cd')] = el;
+    });
+
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+
+    function tick() {
+      var diff = start - Date.now();
+
+      if (diff <= 0) {
+        if (grid) grid.hidden = true;
+        if (msg) {
+          msg.setAttribute('data-i18n', Date.now() <= end ? 'cd.live' : 'cd.past');
+          msg.textContent = t(msg.getAttribute('data-i18n'));
+        }
+        return false;
+      }
+
+      var s = Math.floor(diff / 1000);
+      if (cells.days)  cells.days.textContent  = String(Math.floor(s / 86400));
+      if (cells.hours) cells.hours.textContent = pad(Math.floor(s / 3600) % 24);
+      if (cells.mins)  cells.mins.textContent  = pad(Math.floor(s / 60) % 60);
+      if (cells.secs)  cells.secs.textContent  = pad(s % 60);
+      return true;
+    }
+
+    if (tick()) {
+      setInterval(function () { if (!tick()) { /* 到点后停止更新数字 */ } }, 1000);
+    }
+  }
+
+  /* ---------- 数字滚动 ---------- */
+  function initCountUp() {
+    var items = document.querySelectorAll('[data-countup]');
+    if (!items.length) return;
+
+    function run(el) {
+      var target = parseInt(el.getAttribute('data-countup'), 10) || 0;
+      if (REDUCED) { el.textContent = String(target); return; }
+
+      var startedAt = null;
+      var DURATION = 1100;
+
+      function step(now) {
+        if (startedAt === null) startedAt = now;
+        var p = Math.min((now - startedAt) / DURATION, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = String(Math.round(target * eased));
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    if (REDUCED || !('IntersectionObserver' in window)) return;  // 保留 HTML 里的最终数字
+
+    items.forEach(function (el) { el.textContent = '0'; });
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        run(entry.target);
+        io.unobserve(entry.target);
+      });
+    }, { threshold: 0.4 });
+
+    items.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- Google 地图 ---------- */
+  function initMap() {
+    var ev = CONFIG.event || {};
+    var query = [pick(ev.venue), pick(ev.address)].filter(Boolean).join(', ');
+    if (!query) return;
+
+    var frame = document.getElementById('venue-map');
+    if (frame) frame.src = 'https://www.google.com/maps?q=' + encodeURIComponent(query) + '&output=embed';
+
+    var link = document.getElementById('map-link');
+    if (link) link.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+  }
+
+  /* ---------- 联络资料 ---------- */
   function applyContact() {
     var c = CONFIG.contact || {};
     document.querySelectorAll('[data-contact]').forEach(function (el) {
       var value = c[el.getAttribute('data-contact')];
-      if (!value) return;
-      el.textContent = value;
+      if (value) el.textContent = value;
     });
     document.querySelectorAll('[data-href-tel]').forEach(function (el) {
       if (c.phone) el.href = 'tel:' + c.phone.replace(/[^\d+]/g, '');
@@ -113,12 +242,26 @@
     });
   }
 
-  /* ---------- 导航吸顶阴影 ---------- */
+  /* ---------- 导航吸顶 ---------- */
   function initNav() {
     var nav = document.querySelector('.nav');
     if (!nav) return;
+    var onScroll = function () { nav.classList.toggle('is-stuck', window.scrollY > 8); };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  /* ---------- 手机版固定登记列 ---------- */
+  function initStickyCta() {
+    var bar = document.getElementById('sticky-cta');
+    var hero = document.querySelector('.hero');
+    var rsvp = document.getElementById('rsvp');
+    if (!bar || !hero) return;
+
     var onScroll = function () {
-      nav.classList.toggle('is-stuck', window.scrollY > 8);
+      var pastHero = window.scrollY > hero.offsetHeight * 0.8;
+      var inForm = rsvp && rsvp.getBoundingClientRect().top < window.innerHeight * 0.9;
+      bar.hidden = !(pastHero && !inForm);
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -129,7 +272,7 @@
     var items = document.querySelectorAll('.reveal');
     if (!items.length) return;
 
-    if (!('IntersectionObserver' in window)) {
+    if (REDUCED || !('IntersectionObserver' in window)) {
       items.forEach(function (el) { el.classList.add('is-in'); });
       return;
     }
@@ -155,17 +298,6 @@
     });
   }
 
-  /* ---------- 内部连结保留语言 ---------- */
-  function initLangLinks() {
-    document.addEventListener('click', function (e) {
-      var link = e.target.closest('a[data-keep-lang]');
-      if (!link) return;
-      var url = new URL(link.getAttribute('href'), location.href);
-      url.searchParams.set('lang', lang);
-      link.setAttribute('href', url.pathname + url.search + url.hash);
-    });
-  }
-
   /* ---------- 对外接口（form.js 使用）---------- */
   window.SANS26 = {
     t: t,
@@ -176,11 +308,16 @@
 
   function init() {
     applyLang();
+    applyImages();
     applyContact();
+    initMap();
     initNav();
     initReveal();
+    initCountdown();
+    initCountUp();
+    initStickyCta();
     initLangButtons();
-    initLangLinks();
+    document.body.classList.add('is-ready');
   }
 
   if (document.readyState === 'loading') {
