@@ -107,7 +107,7 @@ window.SANS26_I18N = {
   /* ---------- 登记表单 ---------- */
   'reg.eyebrow':      { en: 'Guest Registration', zh: '嘉宾登记' },
   'reg.title':        { en: 'Register your attendance', zh: '登记出席' },
-  'reg.lede':         { en: 'Complete the form below. A confirmation with directions and full details will follow by email and WhatsApp.', zh: '请填写以下资料。确认函（含交通指引与完整详情）将通过电邮与 WhatsApp 发送给您。' },
+  'reg.lede':         { en: 'Complete the form below. A confirmation with directions and full details will follow on WhatsApp.', zh: '请填写以下资料。确认函（含交通指引与完整详情）将通过 WhatsApp 发送给您。' },
   'reg.asideTitle':   { en: 'Event Details', zh: '活动详情' },
   'reg.aDate':        { en: 'Date', zh: '日期' },
   'reg.aTime':        { en: 'Time', zh: '时间' },
@@ -141,6 +141,6 @@ window.SANS26_I18N = {
   'f.demoMode':       { en: 'Demo mode: the GHL webhook URL has not been set, so this form will not submit anywhere yet.', zh: '示范模式：尚未设定 GHL Webhook URL，表单暂时不会送出资料。' },
 
   'ok.title':         { en: 'You’re registered', zh: '登记成功' },
-  'ok.lede':          { en: 'Thank you. A confirmation with parking and travel directions is on its way to your email and WhatsApp.', zh: '感谢您的登记。含停车与交通指引的确认函，正发送至您的电邮与 WhatsApp。' },
+  'ok.lede':          { en: 'Thank you. A confirmation with parking and travel directions is on its way to your WhatsApp.', zh: '感谢您的登记。含停车与交通指引的确认函，正发送至您的 WhatsApp。' },
   'ok.addCal':        { en: 'Add to Calendar', zh: '加入日历' },
 };
