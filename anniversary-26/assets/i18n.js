@@ -61,10 +61,11 @@ window.SANS26_I18N = {
   /* ---------- Programme（依主视觉时间表）---------- */
   'prog.eyebrow': { en: 'Programme', zh: '活动流程' },
   'prog.title':   { en: 'One day, three experiences', zh: '一天，三段体验' },
-  'prog.lede':    { en: 'From the ground floor up — here is how the day unfolds.', zh: '从地面层一路往上 —— 当天这样进行。' },
+  'prog.lede':    { en: 'From the ground floor up — here is how the day unfolds.', zh: '从 Ground Floor 一路往上 —— 当天这样进行。' },
+  'prog.doors':   { en: 'Doors open 10:00 AM · Opening Ceremony begins 10:30 AM', zh: '上午 10:00 开放入场 · 10:30 正式开幕' },
 
   'prog.1.name':  { en: 'Opening Ceremony', zh: '开幕典礼' },
-  'prog.1.place': { en: 'Ground Floor', zh: '地面层 Ground Floor' },
+  'prog.1.place': { en: 'Ground Floor', zh: 'Ground Floor' },
   'prog.1.time':  { en: '10:30 AM — 1:00 PM', zh: '上午 10:30 — 下午 1:00' },
   'prog.1.i1':    { en: 'Anniversary Opening Ceremony', zh: '周年开幕仪式' },
   'prog.1.i2':    { en: 'Exclusive Premiere of Malaysia’s First Wellness Micro-Drama 《原来，你一直都在》', zh: '马来西亚首部养生微剧《原来，你一直都在》独家首映' },
@@ -72,7 +73,7 @@ window.SANS26_I18N = {
   'prog.1.i4':    { en: 'Special Holistic Wellness Talk by Guest Speaker ND Olive Er', zh: '特邀讲者 ND Olive Er 全方位养生讲座' },
 
   'prog.2.name':  { en: 'Holistic Wellness Experience', zh: '全方位养生体验' },
-  'prog.2.place': { en: 'First Floor', zh: '一楼 First Floor' },
+  'prog.2.place': { en: 'First Floor', zh: 'First Floor' },
   'prog.2.time':  { en: '2:00 PM — 6:00 PM', zh: '下午 2:00 — 傍晚 6:00' },
   'prog.2.i1':    { en: 'Welcome Lunch', zh: '迎宾午餐' },
   'prog.2.i2':    { en: 'Energy Smoothie Bar', zh: '元气果昔吧' },
@@ -81,7 +82,7 @@ window.SANS26_I18N = {
   'prog.2.i5':    { en: 'Complimentary GenkiWave Wellness Assessment', zh: '免费 GenkiWave 健康检测' },
 
   'prog.3.name':  { en: 'Holistic Wellness Retreat', zh: '全方位养生静修' },
-  'prog.3.place': { en: 'Third Floor', zh: '三楼 Third Floor' },
+  'prog.3.place': { en: 'Third Floor', zh: 'Third Floor' },
   'prog.3.time':  { en: '2:00 PM — 6:00 PM', zh: '下午 2:00 — 傍晚 6:00' },
   'prog.3.i1':    { en: 'The Scent of Wellbeing — The Alpha Chakra Experience', zh: '香气疗愈 —— Alpha 脉轮体验' },
   'prog.3.i2':    { en: 'Body-Mind Wellness Workshop by Master Tam', zh: 'Master Tam 身心健康工作坊' },
