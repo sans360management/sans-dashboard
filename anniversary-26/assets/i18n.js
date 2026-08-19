@@ -10,7 +10,7 @@ window.SANS26_I18N = {
   'brand.name':       { en: 'Sans Wellness', zh: 'Sans Wellness' },
   'brand.sub':        { en: 'Since 2000', zh: '始于 2000' },
   'nav.highlights':   { en: 'Highlights', zh: '活动亮点' },
-  'nav.legacy':       { en: 'The Legacy', zh: '品牌传承' },
+  'nav.programme':    { en: 'Programme', zh: '活动流程' },
   'nav.venue':        { en: 'Venue', zh: '活动地点' },
   'nav.rsvp':         { en: 'Register', zh: '登记' },
   'cta.rsvp':         { en: 'Register', zh: '立即登记' },
@@ -58,27 +58,33 @@ window.SANS26_I18N = {
   'hl.4.title': { en: 'Anniversary Experiences', zh: '周年体验' },
   'hl.4.body':  { en: 'Curated experiences reserved for registered guests only.', zh: '专为已登记嘉宾策划的尊享体验。' },
 
-  /* ---------- Legacy ---------- */
-  'lg.eyebrow':       { en: 'The Legacy', zh: '品牌传承' },
-  'lg.title':         { en: 'Twenty-six years of inspiring healthier lives', zh: '二十六年，启发更健康的人生' },
-  'lg.p1': {
-    en: 'Since 2000, Sans Wellness has had one purpose — to inspire healthier lives. Twenty-six years on, that purpose has grown into twelve outlets and a body of work we call Genkilogy.',
-    zh: '自 2000 年起，Sans Wellness 只有一个目标 —— 启发更健康的人生。二十六年后，它长成了十二家门店，以及我们称之为「元气疗法 Genkilogy」的完整体系。',
-  },
-  'lg.p2': {
-    en: 'This anniversary is our way of saying thank you — to the guests, partners and team who built this legacy alongside us.',
-    zh: '这个周年庆，是我们说声谢谢的方式 —— 谢谢一路与我们共同建立这份传承的客人、伙伴与团队。',
-  },
-  'lg.stat1':      { en: 'Years', zh: '年' },
-  'lg.stat1Label': { en: 'Of continuous practice', zh: '持续深耕' },
-  'lg.stat2':      { en: 'Outlets', zh: '门店' },
-  'lg.stat2Label': { en: 'Across Malaysia', zh: '遍布全马' },
+  /* ---------- Programme（依主视觉时间表）---------- */
+  'prog.eyebrow': { en: 'Programme', zh: '活动流程' },
+  'prog.title':   { en: 'One day, three experiences', zh: '一天，三段体验' },
+  'prog.lede':    { en: 'From the ground floor up — here is how the day unfolds.', zh: '从地面层一路往上 —— 当天这样进行。' },
 
-  /* ---------- Agenda ---------- */
-  'ag.eyebrow':   { en: 'Programme', zh: '活动流程' },
-  'ag.title':     { en: 'Full programme to be announced', zh: '完整流程稍后公布' },
-  'ag.body':      { en: 'The run-sheet for the day is being finalised. Registered guests will be the first to receive it.', zh: '当天流程正在敲定中，已登记的嘉宾将优先收到通知。' },
-  'ag.window':    { en: 'Doors open 10:00 AM · Closes 6:00 PM', zh: '上午 10:00 开放 · 傍晚 6:00 结束' },
+  'prog.1.name':  { en: 'Opening Ceremony', zh: '开幕典礼' },
+  'prog.1.place': { en: 'Ground Floor', zh: '地面层 Ground Floor' },
+  'prog.1.time':  { en: '10:30 AM — 1:00 PM', zh: '上午 10:30 — 下午 1:00' },
+  'prog.1.i1':    { en: 'Anniversary Opening Ceremony', zh: '周年开幕仪式' },
+  'prog.1.i2':    { en: 'Exclusive Premiere of Malaysia’s First Wellness Micro-Drama 《原来，你一直都在》', zh: '马来西亚首部养生微剧《原来，你一直都在》独家首映' },
+  'prog.1.i3':    { en: 'Meet & Greet with Celebrities & Cast', zh: '明星与演员见面会' },
+  'prog.1.i4':    { en: 'Special Holistic Wellness Talk by Guest Speaker ND Olive Er', zh: '特邀讲者 ND Olive Er 全方位养生讲座' },
+
+  'prog.2.name':  { en: 'Holistic Wellness Experience', zh: '全方位养生体验' },
+  'prog.2.place': { en: 'First Floor', zh: '一楼 First Floor' },
+  'prog.2.time':  { en: '2:00 PM — 6:00 PM', zh: '下午 2:00 — 傍晚 6:00' },
+  'prog.2.i1':    { en: 'Welcome Lunch', zh: '迎宾午餐' },
+  'prog.2.i2':    { en: 'Energy Smoothie Bar', zh: '元气果昔吧' },
+  'prog.2.i3':    { en: 'Official Launch of Alpha Signature Genkilogy Treatment', zh: 'Alpha Signature Genkilogy 疗程正式发布' },
+  'prog.2.i4':    { en: 'Complimentary Signature Genkilogy Treatment', zh: '免费 Signature Genkilogy 疗程体验' },
+  'prog.2.i5':    { en: 'Complimentary GenkiWave Wellness Assessment', zh: '免费 GenkiWave 健康检测' },
+
+  'prog.3.name':  { en: 'Holistic Wellness Retreat', zh: '全方位养生静修' },
+  'prog.3.place': { en: 'Third Floor', zh: '三楼 Third Floor' },
+  'prog.3.time':  { en: '2:00 PM — 6:00 PM', zh: '下午 2:00 — 傍晚 6:00' },
+  'prog.3.i1':    { en: 'The Scent of Wellbeing — The Alpha Chakra Experience', zh: '香气疗愈 —— Alpha 脉轮体验' },
+  'prog.3.i2':    { en: 'Body-Mind Wellness Workshop by Master Tam', zh: 'Master Tam 身心健康工作坊' },
 
   /* ---------- Venue ---------- */
   'vn.eyebrow':   { en: 'Venue', zh: '活动地点' },
