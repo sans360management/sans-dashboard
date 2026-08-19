@@ -204,16 +204,27 @@ def build():
     # 图片网址独立成一小段放最前面，贴进 GHL 后可以直接在那里改，不用重新打包
     import json
     cfg_imgs = dict(re.findall(r"(poster|logo):\s*'([^']+)'", read('assets/config.js')))
+    def img_literal(rel):
+        """内嵌模式回传切成短行的 base64；否则回传网址字串。
+           单行几十万字元会被 GHL 的编辑器截断，所以一定要切。"""
+        if EMBED_IMAGES:
+            uri = data_uri(rel)
+            if uri:
+                CHUNK = 500
+                parts = [uri[i:i + CHUNK] for i in range(0, len(uri), CHUNK)]
+                return '[\n' + ',\n'.join('    "%s"' % c for c in parts) + '\n  ].join("")'
+        return json.dumps(rel)
+
     override = (
-        '<!-- ▼▼▼ 图片网址 —— 要换图改这两行就好，不用重新打包 ▼▼▼ -->\n'
+        '<!-- ▼▼▼ 图片 —— 要换图改这两行就好，不用重新打包 ▼▼▼ -->\n'
         '<script>\n'
         'window.SANS26_IMAGES = {\n'
         '  poster: %s,\n'
         '  logo:   %s\n'
         '};\n'
         '</script>\n'
-        '<!-- ▲▲▲ 图片网址结束 ▲▲▲ -->\n\n'
-    ) % (json.dumps(cfg_imgs.get('poster', '')), json.dumps(cfg_imgs.get('logo', '')))
+        '<!-- ▲▲▲ 图片结束 ▲▲▲ -->\n\n'
+    ) % (img_literal(cfg_imgs.get('poster', '')), img_literal(cfg_imgs.get('logo', '')))
 
     fragment = (
         '<!-- ===== Sans Wellness · the Legacy of Wellbeing (26th Anniversary) ===== -->\n'
@@ -223,13 +234,7 @@ def build():
         '<script>\n%s\n</script>\n'
     ) % (FONTS, css, body.strip(), js)
 
-    n_img = 0
-    if EMBED_IMAGES:
-        for rel in set(re.findall(r"'(assets/img/[^']+)'", fragment)):
-            uri = data_uri(rel)
-            if uri:
-                fragment = fragment.replace("'%s'" % rel, "'%s'" % uri)
-                n_img += 1
+    n_img = 2 if EMBED_IMAGES else 0
 
     OUT_DIR.mkdir(exist_ok=True)
     target = OUT_DIR / ('ghl-embed-with-images.html' if EMBED_IMAGES else 'ghl-embed.html')
@@ -239,7 +244,7 @@ def build():
     print('→ %s' % target)
     print('   %d KB，图片内嵌 %d 张' % (size_kb, n_img))
 
-    remaining = sorted(set(re.findall(r"'(assets/[^']+)'", fragment)))
+    remaining = [] if EMBED_IMAGES else sorted(set(re.findall(r'"(assets/[^"]+)"', fragment)))
     if remaining:
         print('   ⚠️  这些还是相对路径，贴进 GHL 前请改成绝对网址'
               '（config.js 的 images）：\n       %s' % '\n       '.join(remaining))
