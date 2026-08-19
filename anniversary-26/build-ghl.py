@@ -39,6 +39,11 @@ def read(rel):
 PREFIX = 's26-'
 CLASS_RE = re.compile(r'\.([A-Za-z_][\w-]*)')
 
+# 元素 id 不会被改名，所以 JS 字串里凡是 id 一律跳过。
+# 若不挡，像 prog-art 这种「同时是类别也是 id」的名字，
+# getElementById('prog-art') 会被误改成 's26-prog-art' 而找不到元素。
+ID_NAMES = set()
+
 
 def collect_classes(css):
     """从选择器（而不是属性值）里收集所有类别名。"""
@@ -66,6 +71,8 @@ def rename_in_html(html, names):
 def rename_in_js(js, names):
     """只改字串常值，避免动到 element.lang / el.className 这类属性存取。"""
     def fix(text):
+        if text in ID_NAMES:                 # 是元素 id，原样保留
+            return text
         if '.' in text:                      # 像 '.field.has-error .err' 这种选择器
             return rename_in_selector(text, names)
         parts = re.split(r'(\s+)', text)      # 像 'is-in' 或 'form-status ' 这种类别名
@@ -193,6 +200,9 @@ def build():
     css = scope_css(raw_css)
     body = rename_in_html(body, CLASS_NAMES)
 
+    global ID_NAMES
+    ID_NAMES = set(re.findall(r'id="([^"]+)"', read('index.html')))
+
     js = '\n'.join(read('assets/' + f) for f in ('config.js', 'i18n.js', 'app.js', 'form.js'))
     js = rename_in_js(js, CLASS_NAMES)
     js += UNLOCK
@@ -233,7 +243,7 @@ def build():
         '<script>\n%s\n</script>\n'
     ) % (FONTS, css, body.strip(), js)
 
-    n_img = 2 if EMBED_IMAGES else 0
+    n_img = sum(1 for v in cfg_imgs.values() if EMBED_IMAGES and data_uri(v))
 
     OUT_DIR.mkdir(exist_ok=True)
     target = OUT_DIR / ('ghl-embed-with-images.html' if EMBED_IMAGES else 'ghl-embed.html')
