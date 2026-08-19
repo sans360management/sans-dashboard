@@ -82,7 +82,7 @@ window.SANS26_I18N = {
   'prog.2.i1':    { en: 'Welcome Lunch', zh: '迎宾午餐' },
   'prog.2.i2':    { en: 'Energy Smoothie Bar', zh: '元气果昔吧' },
   'prog.2.i3':    { en: 'Official Launch of Alpha Signature Genkilogy Treatment', zh: 'Alpha Signature Genkilogy 疗程正式发布' },
-  'prog.2.i4':    { en: 'Complementary Signature Genkilogy Treatment', zh: 'Signature Genkilogy 互补疗程' },
+  'prog.2.i4':    { en: 'Complimentary Signature Genkilogy Treatment', zh: '免费 Signature Genkilogy 疗程体验' },
   'prog.2.i5':    { en: 'Complimentary GenkiWave Wellness Assessment', zh: '免费 GenkiWave 健康检测' },
 
   'prog.3.name':  { en: 'Holistic Wellness Retreat', zh: '全方位养生静修' },
