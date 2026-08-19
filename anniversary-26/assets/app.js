@@ -241,23 +241,6 @@
     if (link) link.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
   }
 
-  /* ---------- 联络资料 ---------- */
-  function applyContact() {
-    var c = CONFIG.contact || {};
-    ROOT.querySelectorAll('[data-contact]').forEach(function (el) {
-      var value = c[el.getAttribute('data-contact')];
-      if (value) el.textContent = value;
-    });
-    ROOT.querySelectorAll('[data-href-tel]').forEach(function (el) {
-      if (c.phone) el.href = 'tel:' + c.phone.replace(/[^\d+]/g, '');
-    });
-    ROOT.querySelectorAll('[data-href-mail]').forEach(function (el) {
-      if (c.email) el.href = 'mailto:' + c.email;
-    });
-    ROOT.querySelectorAll('[data-href-wa]').forEach(function (el) {
-      if (c.whatsapp) el.href = 'https://wa.me/' + c.whatsapp.replace(/[^\d]/g, '');
-    });
-  }
 
   /* ---------- 导航吸顶 ---------- */
   function initNav() {
@@ -330,7 +313,6 @@
 
     applyLang();
     applyImages();
-    applyContact();
     initMap();
     initNav();
     initReveal();

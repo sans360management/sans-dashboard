@@ -98,14 +98,11 @@ window.SANS26_I18N = {
   'band.eyebrow': { en: 'Registration Open', zh: '登记开放中' },
   'band.title':   { en: 'We would love to celebrate with you', zh: '诚挚期待与您共同庆祝' },
   'band.lede':    { en: 'Places are limited. Register below and we will send you everything you need before the day.', zh: '名额有限。请于下方登记，活动前我们会把所有资讯发送给您。' },
-  'band.deadline':{ en: 'Kindly register by', zh: '登记截止日期' },
 
   /* ---------- Footer ---------- */
   'foot.eventTitle':  { en: 'The Event', zh: '活动资讯' },
-  'foot.contactTitle':{ en: 'Enquiries', zh: '联络我们' },
   'foot.rights':      { en: 'Sans Wellness. All rights reserved.', zh: 'Sans Wellness 版权所有。' },
   'foot.note':        { en: 'Registration is required for entry.', zh: '入场需事先登记。' },
-  'foot.whatsapp':    { en: 'WhatsApp us', zh: 'WhatsApp 联络' },
 
   /* ---------- 登记表单 ---------- */
   'reg.eyebrow':      { en: 'Guest Registration', zh: '嘉宾登记' },
@@ -116,7 +113,6 @@ window.SANS26_I18N = {
   'reg.aTime':        { en: 'Time', zh: '时间' },
   'reg.aVenue':       { en: 'Venue', zh: '地点' },
   'reg.aDress':       { en: 'Dress Code', zh: '着装要求' },
-  'reg.aRsvp':        { en: 'Register By', zh: '登记截止' },
 
   'f.name':           { en: 'Full Name', zh: '姓名' },
   'f.namePh':         { en: 'As it should appear on your name tag', zh: '请填写名牌上显示的姓名' },
@@ -141,7 +137,7 @@ window.SANS26_I18N = {
   'f.errRequired':    { en: 'This field is required.', zh: '此栏必填。' },
   'f.errEmail':       { en: 'Please enter a valid email address.', zh: '请输入有效的电邮地址。' },
   'f.errPhone':       { en: 'Please enter a valid mobile number.', zh: '请输入有效的手机号码。' },
-  'f.errSubmit':      { en: 'Something went wrong. Please try again, or contact us directly.', zh: '提交失败，请重试，或直接联络我们。' },
+  'f.errSubmit':      { en: 'Something went wrong. Please try again in a moment.', zh: '提交失败，请稍后再试一次。' },
   'f.demoMode':       { en: 'Demo mode: the GHL webhook URL has not been set, so this form will not submit anywhere yet.', zh: '示范模式：尚未设定 GHL Webhook URL，表单暂时不会送出资料。' },
 
   'ok.title':         { en: 'You’re registered', zh: '登记成功' },

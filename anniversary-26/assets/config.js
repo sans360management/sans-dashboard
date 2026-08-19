@@ -38,23 +38,14 @@ window.SANS26_CONFIG = {
     },
     dress:   { en: 'White / Orange', zh: '白色 / 橙色' },
 
-    /* ⚠️ 尚未确定 —— 定了改这里 */
-    rsvpBy:  { en: 'To Be Confirmed', zh: '截止日期待定' },
 
     /* 倒数计时 + 加入日历用（马来西亚时间 UTC+8） */
     startISO: '2026-09-04T10:00:00+08:00',
     endISO:   '2026-09-04T18:00:00+08:00',
   },
 
-  /* ---- 3. 联络方式 ---------------------------------------- */
-  contact: {
-    name:     'Sans Wellness Event Team',
-    phone:    '+60 12-000 0000',          // ⚠️ TBC
-    whatsapp: '60120000000',              // ⚠️ TBC，纯数字含国码
-    email:    'events@sanswellness.com',  // ⚠️ TBC
-  },
 
-  /* ---- 4. 邀请类别（表单下拉选单）-------------------------- */
+  /* ---- 3. 邀请类别（表单下拉选单）-------------------------- */
   invitationCategories: [
     { value: 'VIP Guest',            en: 'VIP Guest',            zh: 'VIP 贵宾' },
     { value: 'Corporate Partner',    en: 'Corporate Partner',    zh: '企业伙伴' },
@@ -66,7 +57,7 @@ window.SANS26_CONFIG = {
     { value: 'Others',               en: 'Others',               zh: '其他' },
   ],
 
-  /* ---- 5. 图片 --------------------------------------------
+  /* ---- 4. 图片 --------------------------------------------
      把档案放进 assets/img/ 就会自动出现；档案不在时页面会
      自动 fallback 到橙色「26」图形版，不会破版。
   --------------------------------------------------------- */

@@ -562,7 +562,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding-block: clamp(44px, 6vw, 68px);
   font-size: 0.9rem;
 }
-.footer__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(24px, 4vw, 54px); margin-bottom: 36px; }
+.footer__grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: clamp(24px, 4vw, 54px); margin-bottom: 36px; }
 .footer .brand__mark { color: #fff; }
 .footer .brand__sub { color: rgba(255,255,255,0.45); }
 .footer h4 {
