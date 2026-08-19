@@ -30,7 +30,7 @@ window.SANS26_CONFIG = {
   /* ---- 2. 活动资料（双语）--------------------------------- */
   event: {
     date:    { en: 'Friday, 4 September 2026', zh: '2026年9月4日（星期五）' },
-    time:    { en: '10:00 AM — 6:00 PM',       zh: '上午 10:00 — 傍晚 6:00' },
+    time:    { en: '10:30 AM — 6:00 PM',       zh: '上午 10:30 — 傍晚 6:00' },
     venue:   { en: 'Sans Wellness Kota Damansara', zh: 'Sans Wellness Kota Damansara' },
     address: {
       en: '32-1, Jalan PJU 5/16, Dataran Sunway Kota Damansara, 47810 Petaling Jaya, Selangor',
@@ -40,7 +40,7 @@ window.SANS26_CONFIG = {
 
 
     /* 倒数计时 + 加入日历用（马来西亚时间 UTC+8） */
-    startISO: '2026-09-04T10:00:00+08:00',
+    startISO: '2026-09-04T10:30:00+08:00',
     endISO:   '2026-09-04T18:00:00+08:00',
   },
 
@@ -66,5 +66,7 @@ window.SANS26_CONFIG = {
     // 想换主视觉：丢新档进 assets/img/，把下面路径改掉即可
     poster: 'assets/img/hero-poster.jpg',
     logo:   'assets/img/SW_LOGO-removebg-preview.png',
+    // 活动流程图 —— 档案放进去就会出现在 Programme 区块；没有就自动不显示
+    programme: 'assets/img/programme.jpg',
   },
 };

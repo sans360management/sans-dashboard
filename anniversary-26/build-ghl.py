@@ -203,7 +203,8 @@ def build():
 
     # 图片网址独立成一小段放最前面，贴进 GHL 后可以直接在那里改，不用重新打包
     import json
-    cfg_imgs = dict(re.findall(r"(poster|logo):\s*'([^']+)'", read('assets/config.js')))
+    cfg_block = re.search(r'images:\s*\{(.*?)\n  \}', read('assets/config.js'), re.S)
+    cfg_imgs = dict(re.findall(r"(\w+):\s*'([^']+)'", cfg_block.group(1) if cfg_block else ''))
     def img_literal(rel):
         """内嵌模式回传切成短行的 base64；否则回传网址字串。
            单行几十万字元会被 GHL 的编辑器截断，所以一定要切。"""
@@ -215,16 +216,14 @@ def build():
                 return '[\n' + ',\n'.join('    "%s"' % c for c in parts) + '\n  ].join("")'
         return json.dumps(rel)
 
+    lines = ',\n'.join('  %-10s %s' % (k + ':', img_literal(v)) for k, v in cfg_imgs.items())
     override = (
-        '<!-- ▼▼▼ 图片 —— 要换图改这两行就好，不用重新打包 ▼▼▼ -->\n'
+        '<!-- ▼▼▼ 图片 —— 要换图改这几行就好，不用重新打包 ▼▼▼ -->\n'
         '<script>\n'
-        'window.SANS26_IMAGES = {\n'
-        '  poster: %s,\n'
-        '  logo:   %s\n'
-        '};\n'
+        'window.SANS26_IMAGES = {\n%s\n};\n'
         '</script>\n'
         '<!-- ▲▲▲ 图片结束 ▲▲▲ -->\n\n'
-    ) % (img_literal(cfg_imgs.get('poster', '')), img_literal(cfg_imgs.get('logo', '')))
+    ) % lines
 
     fragment = (
         '<!-- ===== Sans Wellness · the Legacy of Wellbeing (26th Anniversary) ===== -->\n'

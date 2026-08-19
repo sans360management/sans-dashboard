@@ -443,7 +443,55 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 /* ---------- Programme ---------- */
-.prog { align-items: stretch; }
+/* 没有流程图时三栏并排；放了图就变成「图 + 直式清单」两栏 */
+.prog { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2.4vw, 28px); align-items: stretch; }
+
+.prog-wrap { display: grid; gap: clamp(24px, 4vw, 48px); align-items: start; }
+.prog-wrap.has-art { grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr); }
+.prog-wrap.has-art .prog { grid-template-columns: 1fr; }
+
+.prog-art { margin: 0; position: sticky; top: 96px; }
+.prog-art img {
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: var(--radius);
+  border: 1px solid var(--cocoa-14);
+  box-shadow: var(--shadow-md);
+  background: var(--cream-1);
+}
+
+.prog-more { margin: clamp(26px, 3.5vw, 38px) 0 0; text-align: center; }
+.prog-more a {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--orange-dk);
+  border-bottom: 1px solid rgba(240, 131, 33, 0.4);
+  padding-bottom: 2px;
+  transition: border-color .18s ease, color .18s ease;
+}
+.prog-more a:hover { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* 首屏「名额有限」 */
+.slots {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--orange-dk);
+}
+.slots::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 0 4px rgba(240, 131, 33, 0.18);
+}
 .prog-card {
   position: relative;
   display: flex;
@@ -757,6 +805,11 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   .hero__tagline { max-width: 22ch; margin-inline: auto; }
   .facts, .cd__grid, .hero .btn-row { justify-content: center; }
 
+  .prog-wrap.has-art { grid-template-columns: 1fr; }
+  .prog-art { position: static; }
+  .prog-art img { max-height: 62vh; }
+  .prog { grid-template-columns: repeat(2, 1fr); }
+
   .grid--4 { grid-template-columns: repeat(2, 1fr); }
   .grid--3 { grid-template-columns: repeat(2, 1fr); }
   .grid--2 { grid-template-columns: 1fr; }
@@ -766,7 +819,7 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   .nav__links { display: none; }
 }
 @media (max-width: 680px) {
-  .grid--4, .grid--3 { grid-template-columns: 1fr; }
+  .grid--4, .grid--3, .prog { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
   .footer__grid { grid-template-columns: 1fr; }
   .btn-row { flex-direction: column; }

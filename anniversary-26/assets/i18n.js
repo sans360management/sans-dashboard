@@ -14,7 +14,8 @@ window.SANS26_I18N = {
   'nav.venue':        { en: 'Venue', zh: '活动地点' },
   'nav.rsvp':         { en: 'Register', zh: '登记' },
   'cta.rsvp':         { en: 'Register', zh: '立即登记' },
-  'cta.rsvpLong':     { en: 'Reserve My Place', zh: '预留我的席位' },
+  'cta.rsvpLong':     { en: 'Reserve My Slot', zh: '预留我的名额' },
+  'cta.slots':        { en: 'Slots are limited', zh: '名额有限' },
   'cta.highlights':   { en: 'See Highlights', zh: '查看亮点' },
   'cta.directions':   { en: 'Open in Google Maps', zh: '用 Google 地图开启' },
 
@@ -62,7 +63,9 @@ window.SANS26_I18N = {
   'prog.eyebrow': { en: 'Programme', zh: '活动流程' },
   'prog.title':   { en: 'One day, three experiences', zh: '一天，三段体验' },
   'prog.lede':    { en: 'From the ground floor up — here is how the day unfolds.', zh: '从 Ground Floor 一路往上 —— 当天这样进行。' },
-  'prog.doors':   { en: 'Doors open 10:00 AM · Opening Ceremony begins 10:30 AM', zh: '上午 10:00 开放入场 · 10:30 正式开幕' },
+  'prog.doors':   { en: 'Opening Ceremony begins 10:30 AM', zh: '上午 10:30 正式开幕' },
+  'prog.more':    { en: 'See the Highlights for more of what\u2019s in store →', zh: '更多精彩内容，请看「活动亮点」→' },
+  'prog.artAlt':  { en: 'Sans Wellness 26th Anniversary programme', zh: 'Sans Wellness 26 周年庆活动流程' },
 
   'prog.1.name':  { en: 'Opening Ceremony', zh: '开幕典礼' },
   'prog.1.place': { en: 'Ground Floor', zh: 'Ground Floor' },
@@ -74,11 +77,11 @@ window.SANS26_I18N = {
 
   'prog.2.name':  { en: 'Holistic Wellness Experience', zh: '全方位养生体验' },
   'prog.2.place': { en: 'First Floor', zh: 'First Floor' },
-  'prog.2.time':  { en: '2:00 PM — 6:00 PM', zh: '下午 2:00 — 傍晚 6:00' },
+  'prog.2.time':  { en: '1:00 PM — 6:00 PM', zh: '下午 1:00 — 傍晚 6:00' },
   'prog.2.i1':    { en: 'Welcome Lunch', zh: '迎宾午餐' },
   'prog.2.i2':    { en: 'Energy Smoothie Bar', zh: '元气果昔吧' },
   'prog.2.i3':    { en: 'Official Launch of Alpha Signature Genkilogy Treatment', zh: 'Alpha Signature Genkilogy 疗程正式发布' },
-  'prog.2.i4':    { en: 'Complimentary Signature Genkilogy Treatment', zh: '免费 Signature Genkilogy 疗程体验' },
+  'prog.2.i4':    { en: 'Complementary Signature Genkilogy Treatment', zh: 'Signature Genkilogy 互补疗程' },
   'prog.2.i5':    { en: 'Complimentary GenkiWave Wellness Assessment', zh: '免费 GenkiWave 健康检测' },
 
   'prog.3.name':  { en: 'Holistic Wellness Retreat', zh: '全方位养生静修' },
@@ -97,7 +100,7 @@ window.SANS26_I18N = {
   /* ---------- CTA band ---------- */
   'band.eyebrow': { en: 'Registration Open', zh: '登记开放中' },
   'band.title':   { en: 'We would love to celebrate with you', zh: '诚挚期待与您共同庆祝' },
-  'band.lede':    { en: 'Places are limited. Register below and we will send you everything you need before the day.', zh: '名额有限。请于下方登记，活动前我们会把所有资讯发送给您。' },
+  'band.lede':    { en: 'Slots are limited. Register below and we will send you everything you need before the day.', zh: '名额有限，额满即止。请于下方登记，活动前我们会把所有资讯发送给您。' },
 
   /* ---------- Footer ---------- */
   'foot.eventTitle':  { en: 'The Event', zh: '活动资讯' },

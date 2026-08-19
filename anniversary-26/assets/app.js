@@ -129,6 +129,22 @@
       }
     }
 
+    /* 活动流程图：档案在就显示，并把 Programme 切成两栏 */
+    var progImg = document.getElementById('prog-poster');
+    var progArt = document.getElementById('prog-art');
+    if (progImg && progArt && imgs.programme) {
+      progImg.addEventListener('load', function () {
+        progArt.hidden = false;
+        var wrap = progArt.closest('.prog-wrap');
+        if (wrap) wrap.classList.add('has-art');
+      });
+      progImg.addEventListener('error', function () {
+        console.warn('[Sans26] 流程图载不到，Programme 维持三栏卡片。网址：',
+                     String(imgs.programme).slice(0, 120));
+      });
+      progImg.src = imgs.programme;
+    }
+
     ['brand-logo', 'brand-logo-footer'].forEach(function (id) {
       var logo = document.getElementById(id);
       if (!logo || !imgs.logo) return;

@@ -102,9 +102,10 @@
     </div>
 
     <div class="btn-row">
-      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvpLong">Reserve My Place</a>
+      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvpLong">Reserve My Slot</a>
       <a class="btn btn--ghost" href="#highlights" data-i18n="cta.highlights">See Highlights</a>
     </div>
+    <p class="slots" data-i18n="cta.slots">Slots are limited</p>
     </div><!-- /hero__copy -->
   </div>
 </section>
@@ -159,10 +160,16 @@
       <p class="eyebrow" data-i18n="prog.eyebrow">Programme</p>
       <h2 class="h-section" data-i18n="prog.title">One day, three experiences</h2>
       <p class="lede" data-i18n="prog.lede">From the ground floor up — here is how the day unfolds.</p>
-      <p class="pill" data-i18n="prog.doors">Doors open 10:00 AM · Opening Ceremony begins 10:30 AM</p>
+      <p class="pill" data-i18n="prog.doors">Opening Ceremony begins 10:30 AM</p>
     </div>
 
-    <div class="grid grid--3 prog">
+    <div class="prog-wrap">
+      <!-- 活动流程图（放入 assets/img/programme.jpg 后自动显示） -->
+      <figure class="prog-art" id="prog-art" hidden>
+        <img id="prog-poster" alt="" data-i18n-alt="prog.artAlt">
+      </figure>
+
+      <div class="prog">
       <article class="prog-card reveal">
         <span class="prog-card__step">01</span>
         <h3 class="prog-card__name" data-i18n="prog.1.name">Track</h3>
@@ -209,7 +216,12 @@
             <li data-i18n="prog.3.i2">Body-Mind Wellness Workshop by Master Tam</li>
         </ul>
       </article>
+      </div>
     </div>
+
+    <p class="prog-more">
+      <a href="#highlights" data-i18n="prog.more">See the Highlights for more of what&rsquo;s in store &rarr;</a>
+    </p>
   </div>
 </section>
 
@@ -252,7 +264,7 @@
     <h2 class="h-section" data-i18n="band.title">We would love to celebrate with you</h2>
     <p class="lede" data-i18n="band.lede">Places are limited.</p>
     <div class="btn-row">
-      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvpLong">Reserve My Place</a>
+      <a class="btn btn--primary" href="#rsvp" data-i18n="cta.rsvpLong">Reserve My Slot</a>
     </div>
   </div>
 </section>
