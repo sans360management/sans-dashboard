@@ -24,6 +24,8 @@ window.SANS26_I18N = {
   'hero.posterAlt':   { en: 'Sans Wellness 26th Anniversary — the Legacy of Wellbeing', zh: 'Sans Wellness 二十六周年庆 — the Legacy of Wellbeing' },
   'hero.tagline':     { en: 'Celebrating 26 Years of Inspiring Healthier Lives', zh: '庆祝二十六年，启发更健康的人生' },
   'hero.est':         { en: 'Established Since 2000', zh: '始于 2000 年' },
+  'hero.ceremony':    { en: 'Opening Ceremony 10:30 AM — 1:00 PM', zh: '开幕典礼 上午 10:30 — 下午 1:00' },
+  'hero.more':        { en: 'See the Programme for more excitement →', zh: '查看完整流程，还有更多精彩 →' },
 
   /* fallback（海报图未放入时显示） */
   'hero.fbTitle':     { en: 'the Legacy of', zh: 'the Legacy of' },
@@ -64,7 +66,6 @@ window.SANS26_I18N = {
   'prog.title':   { en: 'One day, three experiences', zh: '一天，三段体验' },
   'prog.lede':    { en: 'From the ground floor up — here is how the day unfolds.', zh: '从 Ground Floor 一路往上 —— 当天这样进行。' },
   'prog.doors':   { en: 'Opening Ceremony begins 10:30 AM', zh: '上午 10:30 正式开幕' },
-  'prog.more':    { en: 'See the Highlights for more of what\u2019s in store →', zh: '更多精彩内容，请看「活动亮点」→' },
   'prog.artAlt':  { en: 'Sans Wellness 26th Anniversary programme', zh: 'Sans Wellness 26 周年庆活动流程' },
 
   'prog.1.name':  { en: 'Opening Ceremony', zh: '开幕典礼' },

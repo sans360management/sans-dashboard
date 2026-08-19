@@ -462,17 +462,24 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--cream-1);
 }
 
-.prog-more { margin: clamp(26px, 3.5vw, 38px) 0 0; text-align: center; }
-.prog-more a {
-  display: inline-block;
-  font-size: 0.95rem;
+/* 首屏：开幕时间 + 前往完整流程 */
+.hero-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: -6px 0 clamp(22px, 3vw, 32px);
+  font-size: 0.9rem;
+  color: var(--cocoa-70);
+}
+.hero-note a {
   font-weight: 600;
   color: var(--orange-dk);
   border-bottom: 1px solid rgba(240, 131, 33, 0.4);
-  padding-bottom: 2px;
-  transition: border-color .18s ease, color .18s ease;
+  padding-bottom: 1px;
+  transition: color .18s ease, border-color .18s ease;
 }
-.prog-more a:hover { color: var(--orange); border-bottom-color: var(--orange); }
+.hero-note a:hover { color: var(--orange); border-bottom-color: var(--orange); }
 
 /* 首屏「名额有限」 */
 .slots {
@@ -803,7 +810,8 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   .hero__art { margin-bottom: clamp(20px, 4vw, 32px); }
   .hero__poster { max-height: min(58vh, 560px); }
   .hero__tagline { max-width: 22ch; margin-inline: auto; }
-  .facts, .cd__grid, .hero .btn-row { justify-content: center; }
+  .facts, .cd__grid, .hero .btn-row, .hero-note { justify-content: center; }
+  .hero .slots { justify-content: center; }
 
   .prog-wrap.has-art { grid-template-columns: 1fr; }
   .prog-art { position: static; }
