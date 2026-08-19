@@ -67,6 +67,6 @@ window.SANS26_CONFIG = {
     poster: 'assets/img/hero-poster.jpg',
     logo:   'assets/img/SW_LOGO-removebg-preview.png',
     // 活动流程图 —— 档案放进去就会出现在 Programme 区块；没有就自动不显示
-    programme: 'assets/img/programme.jpg',
+    programme: 'assets/img/programme.jpeg',
   },
 };

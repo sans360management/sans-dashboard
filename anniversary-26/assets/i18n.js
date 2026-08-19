@@ -87,7 +87,7 @@ window.SANS26_I18N = {
 
   'prog.3.name':  { en: 'Holistic Wellness Retreat', zh: '全方位养生静修' },
   'prog.3.place': { en: 'Third Floor', zh: 'Third Floor' },
-  'prog.3.time':  { en: '2:00 PM — 6:00 PM', zh: '下午 2:00 — 傍晚 6:00' },
+  'prog.3.time':  { en: '1:00 PM — 6:00 PM', zh: '下午 1:00 — 傍晚 6:00' },
   'prog.3.i1':    { en: 'The Scent of Wellbeing — The Alpha Chakra Experience', zh: '香气疗愈 —— Alpha 脉轮体验' },
   'prog.3.i2':    { en: 'Body-Mind Wellness Workshop by Master Tam', zh: 'Master Tam 身心健康工作坊' },
 
