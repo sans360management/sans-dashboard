@@ -64,10 +64,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- Typography ---------- */
 .eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.34em;
+  font-size: clamp(0.82rem, 0.76rem + 0.3vw, 0.94rem);
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--orange);
   margin: 0 0 18px;
 }
