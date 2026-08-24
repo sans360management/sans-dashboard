@@ -49,9 +49,9 @@ window.SANS26_I18N = {
   'hl.1.title': { en: 'Alpha Signature Genkilogy', zh: 'Alpha Signature Genkilogy' },
   'hl.1.body':  { en: 'Our newest signature protocol makes its debut — be among the first to experience it on the day.', zh: '全新旗舰疗程首度亮相 —— 当天抢先体验。' },
 
-  'hl.2.tag':   { en: 'Limited-time', zh: '限时' },
-  'hl.2.title': { en: 'Wellness Privileges', zh: '养生礼遇' },
-  'hl.2.body':  { en: 'Anniversary-only privileges, available on the day while slots last.', zh: '仅限周年当天的专属礼遇，名额有限，售完即止。' },
+  'hl.2.tag':   { en: 'All Complimentary', zh: '全部免费' },
+  'hl.2.title': { en: 'Free Treatments Worth Enjoying', zh: '免费护理，值得体验' },
+  'hl.2.body':  { en: 'Complimentary Genkilogy treatment, GenkiWave assessment and essential oil experience — plus an exclusive gift worth RM168. All included, no extra cost, while slots last.', zh: '免费 Genkilogy 疗程、GenkiWave 健康检测、精油体验 —— 再加上一份价值 RM168 的周年限定礼品，全部免费奉上，名额有限。' },
 
   'hl.3.tag':   { en: 'Holistic', zh: '全方位' },
   'hl.3.title': { en: 'Wellness Festival', zh: '健康节' },
@@ -75,21 +75,26 @@ window.SANS26_I18N = {
   'prog.1.i2':    { en: 'Exclusive Premiere of Malaysia’s First Wellness Micro-Drama 《原来，你一直都在》', zh: '马来西亚首部养生微剧《原来，你一直都在》独家首映' },
   'prog.1.i3':    { en: 'Meet & Greet with Celebrities & Cast', zh: '明星与演员见面会' },
   'prog.1.i4':    { en: 'Special Holistic Wellness Talk by Guest Speaker ND Olive Er', zh: '特邀讲者 ND Olive Er 全方位养生讲座' },
+  'prog.1.i5':    { en: 'Free Morning Refreshment & Welcome Drinks', zh: '免费晨间茶点与迎宾饮品' },
 
   'prog.2.name':  { en: 'Holistic Wellness Experience', zh: '全方位养生体验' },
   'prog.2.place': { en: 'First Floor', zh: 'First Floor' },
   'prog.2.time':  { en: '1:00 PM — 6:00 PM', zh: '下午 1:00 — 傍晚 6:00' },
-  'prog.2.i1':    { en: 'Welcome Lunch', zh: '迎宾午餐' },
-  'prog.2.i2':    { en: 'Energy Smoothie Bar', zh: '元气果昔吧' },
+  'prog.2.i1':    { en: 'Free Lunch & Drinks', zh: '免费午餐与饮品' },
+  'prog.2.i2':    { en: 'Free Energy Smoothie & Healthy Multigrain Beverage', zh: '免费元气果昔与养生谷物饮' },
   'prog.2.i3':    { en: 'Official Launch of Alpha Signature Genkilogy Treatment', zh: 'Alpha Signature Genkilogy 疗程正式发布' },
   'prog.2.i4':    { en: 'Complimentary Signature Genkilogy Treatment', zh: '免费 Signature Genkilogy 疗程体验' },
   'prog.2.i5':    { en: 'Complimentary GenkiWave Wellness Assessment', zh: '免费 GenkiWave 健康检测' },
+  'prog.2.i6':    { en: 'Complimentary Essential Oil Experience', zh: '免费精油体验' },
+  'prog.2.i7':    { en: 'Complimentary Special Event Gift, worth RM168', zh: '免费周年限定礼品，价值 RM168' },
 
   'prog.3.name':  { en: 'Holistic Wellness Retreat', zh: '全方位养生静修' },
   'prog.3.place': { en: 'Third Floor', zh: 'Third Floor' },
   'prog.3.time':  { en: '1:00 PM — 6:00 PM', zh: '下午 1:00 — 傍晚 6:00' },
   'prog.3.i1':    { en: 'The Scent of Wellbeing — The Alpha Chakra Experience', zh: '香气疗愈 —— Alpha 脉轮体验' },
-  'prog.3.i2':    { en: 'Body-Mind Wellness Workshop by Master Tam', zh: 'Master Tam 身心健康工作坊' },
+  'prog.3.i2':    { en: 'Free Entry to the Body-Mind Wellness Workshop by Master Tam', zh: '免费入场：Master Tam 身心健康工作坊' },
+
+  'tag.free':     { en: 'Free', zh: '免费' },
 
   /* ---------- Venue ---------- */
   'vn.eyebrow':   { en: 'Venue', zh: '活动地点' },

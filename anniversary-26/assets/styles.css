@@ -569,6 +569,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
   opacity: .55;
 }
 
+/* 免费 / Complimentary 项目特别标示出来 */
+.prog-card__list li.is-free { color: var(--cocoa); font-weight: 600; }
+.prog-card__list li.is-free::before { opacity: 1; }
+.tag-free {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1.5px 8px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
 /* ---------- Quote / Agenda band ---------- */
 .quote { background: linear-gradient(180deg, var(--cream-2), var(--cream-1)); border-block: 1px solid var(--cocoa-14); }
 
