@@ -4,7 +4,7 @@
 
 跟 build-single.py 的差别：
   1. 去掉 <!doctype>/<html>/<head>/<body> —— GHL 只吃片段
-  2. 整页包进 <div id="sans26">，**所有 CSS 都限定在这个容器内**
+  2. 整页包进 <div id="sansnc">，**所有 CSS 都限定在这个容器内**
      （不然 .card / .nav / .btn 这种通用类别会跟 GHL 编辑器本身的样式互相污染）
   3. 字型改用 @import（GHL 有时会滤掉 <link>）
   4. 自动解开外层容器的 overflow / transform，让吸顶导览列能正常运作
@@ -22,7 +22,7 @@ import sys
 ROOT = pathlib.Path(__file__).parent
 OUT_DIR = ROOT / 'dist'
 EMBED_IMAGES = '--embed-img' in sys.argv
-SCOPE = '#sans26'
+SCOPE = '#sansnc'
 CLASS_NAMES = set()
 
 FONTS = ("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700"
@@ -36,7 +36,7 @@ def read(rel):
 
 # ----------------------------------------------------------------- 类别改名
 
-PREFIX = 's26-'
+PREFIX = 'snc-'
 CLASS_RE = re.compile(r'\.([A-Za-z_][\w-]*)')
 
 # 元素 id 不会被改名，所以 JS 字串里凡是 id 一律跳过。
@@ -44,11 +44,11 @@ CLASS_RE = re.compile(r'\.([A-Za-z_][\w-]*)')
 # getElementById('prog-art') 会被误改成 's26-prog-art' 而找不到元素。
 ID_NAMES = set()
 
-# i18n 字典的 key（例如 'cta.slots'、'hl.eyebrow'）也一律跳过。
-# 若不挡：key 里的 '.slots' 只是句点分隔的命名习惯，
-# 但因为 .slots 剛好也是真实的 CSS 类别名，
-# rename_in_selector 会把它误改成 'cta.s26-slots'，
-# 跟 HTML 里没被动过的 data-i18n="cta.slots" 对不上，翻译就悄悄消失。
+# i18n 字典的 key（例如 'nav.offer'、'cta.slots'）也一律跳过。
+# 若不挡：key 里的 '.offer' / '.slots' 只是句点分隔的命名习惯，
+# 但因为 .offer / .slots 剛好也是真实的 CSS 类别名，
+# rename_in_selector 会把它们当选择器誤改成 'nav.snc-offer'，
+# 跟 HTML 里没被动过的 data-i18n="nav.offer" 对不上，翻译就悄悄消失。
 I18N_KEYS = set()
 
 
@@ -182,7 +182,7 @@ def data_uri(rel):
 UNLOCK = """
 /* 吸顶导览列若被 GHL 的外层容器裁掉，往上解开 overflow / transform */
 (function () {
-  var el = document.getElementById('sans26');
+  var el = document.getElementById('sansnc');
   for (var p = el && el.parentElement; p && p !== document.body; p = p.parentElement) {
     var cs = getComputedStyle(p);
     if (cs.overflow !== 'visible') p.style.overflow = 'visible';
@@ -248,10 +248,10 @@ def build():
     ) % lines
 
     fragment = (
-        '<!-- ===== Sans Wellness · the Legacy of Wellbeing (26th Anniversary) ===== -->\n'
+        '<!-- ===== Sans Wellness · 26 周年元气肩颈免费体验会 ===== -->\n'
         + override +
         '<style>\n@import url("%s");\n%s\n</style>\n\n'
-        '<div id="sans26">\n%s\n</div>\n\n'
+        '<div id="sansnc">\n%s\n</div>\n\n'
         '<script>\n%s\n</script>\n'
     ) % (FONTS, css, body.strip(), js)
 
