@@ -139,18 +139,22 @@ window.SANS26_I18N = {
   'test.sub':         { en: 'We have always believed the only review that counts is the customer’s own.', zh: '我们坚持相信，顾客的心里话最重要' },
   'test.title':       { en: 'More from our customers', zh: '其他顾客回馈' },
 
+  'test.1.name':      { en: 'Tan Yean Chin', zh: 'Tan Yean Chin' },
   'test.1.title':     { en: '“Consistently Great Treatments and Service”', zh: '“Consistently Great Treatments and Service”' },
   'test.1.body':      { en: 'The treatments make my body feels more relax and rejuvenated. Always follow my wife to do treatment during weekend. Cheras Traders Square branch, both Eva Tee, Tang XinLing always treat me and my wife with dedication and great techniques. Enjoyed every treatment.', zh: 'The treatments make my body feels more relax and rejuvenated. Always follow my wife to do treatment during weekend. Cheras Traders Square branch, both Eva Tee, Tang XinLing always treat me and my wife with dedication and great techniques. Enjoyed every treatment.' },
   'test.1.place':     { en: 'Cheras Traders Square', zh: 'Cheras Traders Square 分店' },
 
+  'test.2.name':      { en: 'Ïrēnē Èrłíndà', zh: 'Ïrēnē Èrłíndà' },
   'test.2.title':     { en: '“Skilful Therapy, Totally Worth the Trip”', zh: '“Skilful Therapy, Totally Worth the Trip”' },
   'test.2.body':      { en: 'Yes, I am one of those who has bad shoulder pain and I come here for their massage therapy. Love the ambience and those who love healing oil scent, you will love it. Feeling rejuvenated under the hands of skilful masseur. Worth the trip for a well relaxed massage. Recommend to all — Sans Wellness Kota Kemuning, my sanctuary.', zh: 'Yes, I am one of those who has bad shoulder pain and I come here for their massage therapy. Love the ambience and those who love healing oil scent, you will love it. Feeling rejuvenated under the hands of skilful masseur. Worth the trip for a well relaxed massage. Recommend to all — Sans Wellness Kota Kemuning, my sanctuary.' },
   'test.2.place':     { en: 'Kota Kemuning', zh: 'Kota Kemuning 分店' },
 
+  'test.3.name':      { en: 'Candy Leng', zh: 'Candy Leng' },
   'test.3.title':     { en: '“My neck and shoulder pain finally has an answer — thank you Sans”', zh: '“颈肩痛有救了，感谢 Sans”' },
   'test.3.body':      { en: 'By pure chance I found Sans Wellness, and I am grateful I finally found a centre that could solve what I was suffering from. I had seen Western doctors and TCM — all they could do was let me keep working through the pain. Then I walked into the Sans Wellness at Sutera and met my therapist Zoe. She helped me understand what was actually wrong with my body and told me confidently that their treatment could help. Just one session, and my neck and shoulder problem improved a lot. After the second, the constant pain was simply gone. Truly thank you Zoe — I no longer live with that worry and that ache.', zh: '机缘巧合让我认识了 Sans Wellness，也庆幸我终于找到了可以解决我痛苦的治疗中心。看了西医、中医，真的都只能让我痛着继续工作，一直到我走进了 Sutera 的这间 Sans Wellness，见到了我的治疗师 Zoe。她让我了解了我身体的问题所在，也很有信心地告诉我，他们的疗程可以帮助我。就这样，就只一次，颈肩问题真的好了很多；第二次治疗以后，整个颈肩真的就不再一直痛着了。真心谢谢 Zoe 的专业和帮助，让我现在可以不再烦恼和疼痛。' },
   'test.3.place':     { en: 'Sutera', zh: 'Sutera 分店' },
 
+  'test.4.name':      { en: 'Nabiha Karimah Sulieman', zh: 'Nabiha Karimah Sulieman' },
   'test.4.title':     { en: '“Long Drive Pain Gone, Recovery Starts with Genki Therapy”', zh: '“Long Drive Pain Gone, Recovery Starts with Genki Therapy”' },
   'test.4.body':      { en: 'I suffered Plantar Fasciitis due to long hours of driving and seating. In Sans Wellness, therapist Zoey from Sutera Utama has recommended Genki to treat my soreness. Since then I love the genki massage eventho its a bit painful at first. Love when my therapist apply essential oil on the light b4 massage, really helps in recovery. Special thanks to Zoey.', zh: 'I suffered Plantar Fasciitis due to long hours of driving and seating. In Sans Wellness, therapist Zoey from Sutera Utama has recommended Genki to treat my soreness. Since then I love the genki massage eventho its a bit painful at first. Love when my therapist apply essential oil on the light b4 massage, really helps in recovery. Special thanks to Zoey.' },
   'test.4.place':     { en: 'Sutera Utama', zh: 'Sutera Utama 分店' },

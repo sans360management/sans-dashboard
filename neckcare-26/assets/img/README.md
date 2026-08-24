@@ -17,7 +17,14 @@
 | `offer-3.jpg` | Offer 卡③：4 合 1 健康检测实拍 | 同上 |
 | `value-grid.jpg` | 价值锚定区的四宫格拼图（NECKFIX STUDIO 招牌 + 团队合照） | 横式，1400px 内，300KB 以内 |
 | `awards.png` | 奖项墙长条图 | 宽 2000px 内，白底或透明底 |
-| `brand-video-cover.jpg` | 品牌影片封面（**要重做成 26 周年版**，原图写的是 24 Years） | 16:9，1280px 内 |
+| `brand-video-cover.jpg` | 品牌影片封面（已用 26 周年海报做好） | 16:9，1280px 内 |
+| `testimonial-1.jpg` | 顾客头像：Tan Yean Chin | 正方，头像居中，300px 内即可 |
+| `testimonial-2.jpg` | 顾客头像：Ïrēnē Èrłíndà | 同上 |
+| `testimonial-3.jpg` | 顾客头像：Candy Leng | 同上 |
+| `testimonial-4.jpg` | 顾客头像：Nabiha Karimah Sulieman | 同上 |
+
+> 顾客头像还没上传前，会先显示橙底圆圈 + 姓名缩写（例如 TY、IE），不会破版；
+> 上传后自动换成真人照片。
 
 ## 换图流程（跟周年庆页一样）
 

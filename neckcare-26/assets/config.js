@@ -85,6 +85,10 @@ window.SANS26_CONFIG = {
     offer3:      'assets/img/offer-3.jpg',          // 4 合 1 健康检测
     valueGrid:   'assets/img/value-grid.jpg',       // 四宫格（NECKFIX STUDIO + 团队）
     awards:      'assets/img/awards.png',           // 奖项墙长条
+    test1:       'assets/img/testimonial-1.jpg',    // 顾客头像：Tan Yean Chin
+    test2:       'assets/img/testimonial-2.jpg',    // 顾客头像：Ïrēnē Èrłíndà
+    test3:       'assets/img/testimonial-3.jpg',    // 顾客头像：Candy Leng
+    test4:       'assets/img/testimonial-4.jpg',    // 顾客头像：Nabiha Karimah Sulieman
     brandCover:  'assets/img/brand-video-cover.jpg',// 品牌影片封面（26 周年版）
   },
 

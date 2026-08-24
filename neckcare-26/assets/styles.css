@@ -1314,6 +1314,31 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   transition: transform .22s ease, box-shadow .22s ease;
 }
 .tcard:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+.tcard__head { display: flex; align-items: center; gap: 13px; margin: 0 0 18px; }
+.tcard__avatar {
+  flex: none;
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(155deg, var(--orange), var(--orange-dk));
+  display: grid;
+  place-items: center;
+  background-size: cover;
+  background-position: center;
+  box-shadow: var(--shadow-sm);
+}
+.tcard__initials { color: #fff; font-weight: 700; font-size: 0.86rem; letter-spacing: 0.02em; }
+.tcard__avatar.has-img .tcard__initials { display: none; }
+.tcard__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tcard__name { font-weight: 700; font-size: 0.98rem; }
+.tcard__place {
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cocoa-45);
+  font-weight: 600;
+}
+
 .tcard__stars { color: #F5A623; letter-spacing: 0.14em; font-size: 0.92rem; margin-bottom: 12px; }
 .tcard blockquote {
   margin: 0 0 12px;
@@ -1322,14 +1347,7 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   font-weight: 600;
   line-height: 1.32;
 }
-.tcard p { margin: 0 0 16px; font-size: 0.92rem; line-height: 1.68; }
-.tcard figcaption {
-  font-size: 0.76rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--cocoa-45);
-  font-weight: 600;
-}
+.tcard p { margin: 0; font-size: 0.92rem; line-height: 1.68; }
 
 /* ---------- 常见问题 ---------- */
 .faq { max-width: 780px; margin-inline: auto; display: grid; gap: 12px; }
