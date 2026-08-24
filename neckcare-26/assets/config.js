@@ -59,8 +59,12 @@ window.SANS26_CONFIG = {
      留空 = 该区块自动不显示，不会留下空洞。
   --------------------------------------------------------- */
   videos: {
-    brand: '',
-    testimonials: ['', '', ''],
+    brand: 'https://assets.cdn.filesafe.space/JOBK6AFJoAgvBGGODD6q/media/6911b1f0c3a1ea24872935db.mp4',
+    testimonials: [
+      'https://youtu.be/xXXIsgiMHyQ?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
+      'https://youtu.be/cVkKBuLmnRA?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
+      'https://youtu.be/YvjONMLxgXc?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
+    ],
   },
 
   /* ---- 5. 图片 --------------------------------------------
