@@ -18,7 +18,7 @@ window.SANS26_CONFIG = {
      ⚠️ 这一场要用**新开的一份表单**（跟周年庆 VIP 邀请那份分开），
         建好之后把网址贴进下面这行就会自动生效。
         留空 = 示范模式：显示占位提示，页面不会破。 */
-  ghlFormEmbedUrl: '',
+  ghlFormEmbedUrl: 'https://api.qiai.tech/widget/form/WjTrqEdxyFTpm3WH0BEp',
 
   /* formMode: 'custom' 时使用 —— GHL Workflow 的 Inbound Webhook URL */
   ghlWebhookUrl: '',
