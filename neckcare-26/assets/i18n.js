@@ -20,7 +20,7 @@ window.SANS26_I18N = {
   'cta.short':        { en: 'Register Free', zh: '免费报名' },
   'cta.claim':        { en: 'Register & Claim My Free Session', zh: '马上报名参加领取' },
   'cta.claimLong':    { en: 'Register Now — Claim My Free Neckcare Session', zh: '马上报名参加领取免费肩颈护理体验' },
-  'cta.slots':        { en: 'Limited slots · One day only', zh: '名额有限 · 仅此一天' },
+  'cta.slots':        { en: 'First 50 clients only · One day only', zh: '仅限首 50 位 · 仅此一天' },
   'cta.directions':   { en: 'Open in Google Maps', zh: '用 Google 地图开启' },
   'cta.waze':         { en: 'Navigate with Waze', zh: '用 Waze 导航' },
   'cta.parkVideo':    { en: 'Watch the parking guide', zh: '观看停车指引影片' },
@@ -32,8 +32,10 @@ window.SANS26_I18N = {
   'hero.sub':         { en: 'You are warmly invited to our 26th Anniversary wellness open house — “Goodbye to the Hidden Neck Problem”.', zh: '诚挚邀请你出席 26 周年「告别"隐形"颈椎病」健康线下体验会' },
   'hero.lede':        { en: 'Before a small ache turns into something serious, give your own health — and your parents’ — one honest afternoon. Come and see how a whole-body wellness approach restores balance and keeps chronic problems away.', zh: '如果你不想身体惨遭严重疾病影响，请这一次真正关注自己和父母的健康！欢迎出席体验会，一同探索如何通过全方位养生方案，恢复身心平衡，远离慢性问题，实现长期健康。' },
   'hero.free':        { en: 'Come and feel it for yourself — free — the moment your neck and shoulders finally let go.', zh: '免费让你体验肩颈护理的奥秘，让你马上感受肩颈轻松的飞跃感' },
-  'hero.badgeTitle':  { en: 'Free Genkilogy NeckFix Therapy', zh: '免费元气肩颈疏通护理' },
-  'hero.badgeValue':  { en: 'Worth RM298 — completely free today', zh: '价值 RM298，今天完全免费' },
+  /* RM298 一定要写成「三项总值」——接在 Genkilogy 后面会被读成单项价格 */
+  'hero.badgeItems':  { en: '1-on-1 Consultation + 4-in-1 Health Assessment + Genkilogy NeckFix Therapy', zh: '1 对 1 健康咨询 ＋ 4 合 1 健康检测 ＋ Genkilogy NeckFix 元气肩颈护理' },
+  'hero.badgeValue':  { en: 'All three, total value RM298 — free for our 26th Anniversary', zh: '三项总值 RM298 —— 26 周年完全免费' },
+  'hero.badgeLimit':  { en: 'Limited to the first 50 clients only', zh: '仅限首 50 位登记者' },
   'hero.pill1':       { en: 'FREE 1-on-1 consultation', zh: '免费 1 对 1 健康咨询' },
   'hero.pill2':       { en: 'FREE Exclusive Genkilogy NeckFix Therapy', zh: '免费 独家元气肩颈护理' },
   'hero.pill3':       { en: 'FREE 4-in-1 assessment', zh: '免费 4 合 1 健康检测' },
@@ -132,10 +134,15 @@ window.SANS26_I18N = {
   'value.l4':         { en: 'The patented Genki wand — feel each acupoint actually open up', zh: '独家专利元气棒，让你深度体验穴位被打开的通畅感' },
   'value.l5':         { en: 'The same treatment over 100,000 customers have already been through', zh: '超过 100,000 位顾客亲身体验过的护理' },
   'value.l6':         { en: '26 years of physical outlets — proven hands, fast relief for the point that hurts', zh: '经营 26 年的线下店，专业手法，快速解决痛点' },
-  'value.priceLabel': { en: 'Normally, one Genkilogy NeckFix Therapy session costs', zh: '平时，体验我们的元气肩颈护理，一个人收费是' },
-  'value.price':      { en: 'RM298', zh: 'RM298' },
-  'value.freeLine':   { en: 'But for our 26th Anniversary, we are giving this Exclusive Genkilogy NeckFix Therapy away — free. Registering is all it takes.', zh: '但是！26 周年这一天，我们免费送出这个独家元气肩颈护理 —— 只要报名就能得到。' },
-  'value.bubble':     { en: 'If you could experience it today, for free — how does that sound?', zh: '如果今天你能免费体验，你觉得如何？' },
+  /* ---------- 26 周年独家优惠 ----------
+     取代原本的「原价 RM298 → 今天免费」价格锚定。
+     不做价格比较，避免读者以为免费送的是完整疗程。 */
+  'offer26.title':    { en: 'Exclusive 26th Anniversary Offer', zh: '26 周年独家优惠' },
+  'offer26.p1':       { en: 'To celebrate our 26th Anniversary, we’re giving you an exclusive opportunity to experience Genkilogy NeckFix Therapy — FREE.', zh: '为庆祝 26 周年，我们送出一个独家机会 —— 让你亲身体验 Genkilogy NeckFix 元气肩颈护理，完全免费。' },
+  'offer26.p2':       { en: 'No payment. No obligation. Simply register to claim your complimentary anniversary session.', zh: '无需付费，没有任何附加条件。只要登记，即可领取你的周年庆体验。' },
+  'offer26.limit':    { en: 'Limited to the first 50 clients only.', zh: '仅限首 50 位登记者。' },
+  'offer26.p3':       { en: 'Experience it for yourself and discover why so many people are talking about Genkilogy NeckFix.', zh: '亲自体验一次，你就会明白为什么这么多人在讨论 Genkilogy NeckFix。' },
+  'offer26.cta':      { en: 'Register now — limited slots available!', zh: '马上登记 —— 名额有限！' },
 
   /* ---------- 稀缺 ---------- */
   'urg.title':        { en: 'One day only ‖ No second session', zh: '仅此一天 ‖ 没有第二场' },
@@ -143,7 +150,7 @@ window.SANS26_I18N = {
   'urg.c1':           { en: 'Set a reminder now', zh: '现在就设置提醒' },
   'urg.c2':           { en: 'Clear the other plans that day', zh: '推掉当天的其他安排' },
   'urg.c3':           { en: 'Show up properly for one session that changes your health', zh: '认真参加一场改变你健康的线下活动' },
-  'urg.slots':        { en: 'Slots on the day are limited and close once full.', zh: '当天名额有限，额满即止。' },
+  'urg.slots':        { en: 'Limited to the first 50 clients — registration closes once the 50 are taken.', zh: '仅限首 50 位登记者，额满即止。' },
 
   /* ---------- 品牌信任 ---------- */
   'about.q':          { en: 'So what exactly is Sans Wellness?', zh: 'Sans Wellness 到底是做什么的呢？' },

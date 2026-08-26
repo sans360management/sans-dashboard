@@ -1114,40 +1114,47 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   position: sticky;
   top: 108px;
 }
-.val__priceLabel { margin: 0 0 6px; font-size: 0.92rem; color: var(--cocoa-70); }
-.val__price { margin: 0 0 16px; }
-.val__price s {
+/* 26 周年独家优惠（取代原本的 RM298 价格锚定）*/
+.offer26__title {
   font-family: var(--display);
-  font-size: clamp(2.6rem, 6vw, 3.6rem);
+  font-size: clamp(1.5rem, 3vw, 1.95rem);
   font-weight: 700;
-  color: var(--cocoa-45);
-  text-decoration-color: var(--orange);
-  text-decoration-thickness: 3px;
+  line-height: 1.15;
+  color: var(--orange-dk);
+  margin: 0 0 16px;
 }
-.val__free { font-weight: 600; margin: 0 0 24px; }
-
-.bubble {
-  position: relative;
-  margin: 0 0 34px;
-  padding: 22px 26px;
-  border-radius: 18px;
-  background: var(--cocoa);
-  color: #fff;
-}
-.bubble p {
-  margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.2rem, 2.3vw, 1.55rem);
+.offer26__lead {
+  font-size: 1.02rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.6;
+  margin: 0 0 14px;
 }
-.bubble::after {
-  content: '';
-  position: absolute;
-  left: 34px; bottom: -13px;
-  border: 7px solid transparent;
-  border-top: 14px solid var(--cocoa);
-  border-bottom: 0;
+.offer26__p {
+  font-size: 0.95rem;
+  color: var(--cocoa-70);
+  line-height: 1.65;
+  margin: 0 0 14px;
+}
+.offer26__limit {
+  display: block;
+  margin: 0 0 18px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: var(--orange);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(240, 131, 33, 0.28);
+}
+.offer26__kicker {
+  font-family: var(--display);
+  font-size: clamp(1.12rem, 2.2vw, 1.4rem);
+  font-weight: 600;
+  line-height: 1.32;
+  color: var(--cocoa);
+  margin: 0 0 20px;
 }
 
 /* ---------- 稀缺（橙底） ---------- */
@@ -1389,7 +1396,7 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
 /* ---------- Hero 徽章：免费护理重点标示 ---------- */
 .hero__badge {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   margin: 0 0 22px;
   padding: 12px 20px;
@@ -1398,9 +1405,17 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   border: 1.5px solid rgba(240, 131, 33, 0.4);
   box-shadow: var(--shadow-sm);
 }
-.hero__badgeIcon { font-size: 1.5rem; flex: none; line-height: 1; }
-.hero__badge strong { color: var(--orange-dk); font-size: 0.98rem; }
-.hero__badge span:last-child { display: block; font-size: 0.86rem; color: var(--cocoa-70); margin-top: 2px; }
+.hero__badgeIcon { font-size: 1.5rem; flex: none; line-height: 1; margin-top: 1px; }
+.hero__badgeText { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hero__badgeItems { font-size: 0.88rem; line-height: 1.45; color: var(--cocoa-70); }
+.hero__badgeValue { font-size: 1.02rem; line-height: 1.35; color: var(--orange-dk); font-weight: 700; }
+.hero__badgeLimit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cocoa);
+  opacity: .74;
+}
 
 /* ---------- Offer 招牌卡 ---------- */
 .offer--lead {
