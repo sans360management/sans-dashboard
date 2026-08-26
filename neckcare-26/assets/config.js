@@ -59,14 +59,18 @@ window.SANS26_CONFIG = {
      留空 = 该区块自动不显示，不会留下空洞。
 
      ⚠️ 影片一定要是完整网址，不能放进 assets/ 用相对路径 ——
-        贴进 GHL 后相对路径会找不到档案。上传方式：
+        贴进 GHL 后相对路径会找不到档案。要换影片：
         GHL → Settings → Media Library → 上传 mp4 → 复制网址贴到下面。
 
-     等新的活动介绍影片：旧的 15 秒版本先移除，网址留在这里备查
-     'https://assets.cdn.filesafe.space/JOBK6AFJoAgvBGGODD6q/media/6911b1f0c3a1ea24872935db.mp4'
+     同一支影片在 repo 里也有一份（assets/video/event-intro.mp4，22MB）。
+     页面走的是下面的 GHL CDN 网址；GHL 那边真的挂了才改用这个备援：
+     'https://raw.githubusercontent.com/sans360management/sans-dashboard/main-sonhmr/neckcare-26/assets/video/event-intro.mp4'
+
+     （被换掉的 15 秒旧版，留着备查：
+      .../media/6911b1f0c3a1ea24872935db.mp4）
   --------------------------------------------------------- */
   videos: {
-    brand: '',
+    brand: 'https://assets.cdn.filesafe.space/JOBK6AFJoAgvBGGODD6q/media/6a8e5bd267bb7ac351f83638.mp4',
     testimonials: [
       'https://youtu.be/xXXIsgiMHyQ?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
       'https://youtu.be/cVkKBuLmnRA?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
