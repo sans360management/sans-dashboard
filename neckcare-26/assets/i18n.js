@@ -81,7 +81,7 @@ window.SANS26_I18N = {
   'offer.lede':       { en: 'Attend our 26th Anniversary open house and everything below is yours at no cost — no purchase required.', zh: '出席这场 26 周年体验会，以下三项全部免费领取 —— 无需消费。' },
   'offer.1.ribbon':   { en: '★ Signature', zh: '★ 招牌 Signature' },
   'offer.1.name':     { en: 'Free Genkilogy NeckFix Therapy', zh: '免费元气肩颈疏通护理' },
-  'offer.1.en':       { en: 'Genkilogy NeckFix Therapy · 30 mins', zh: 'Genkilogy NeckFix Therapy · 30 分钟' },
+  'offer.1.en':       { en: 'Exclusive Genkilogy NeckFix Therapy', zh: '独家元气肩颈护理' },
   'offer.1.desc':     { en: 'A trained therapist works the neck and shoulder points with our patented Genki wand. Most guests feel the release before the session is over.', zh: '由专业治疗师使用独家专利元气棒，深度疏通肩颈穴位 —— 大部分人还没做完就已经感觉到"松开"的那一刻。' },
   'offer.2.name':     { en: 'Free 1-on-1 Health Consultation', zh: '免费 1 对 1 健康咨询' },
   'offer.2.en':       { en: 'Personal Health Coaching Consultation', zh: 'Personal Health Coaching Consultation' },
@@ -119,7 +119,7 @@ window.SANS26_I18N = {
   'incl.title':       { en: 'Also included on the day', zh: '当天还包括' },
   'incl.1':           { en: 'Free 1-on-1 health consultation', zh: '免费 1 对 1 健康咨询' },
   'incl.2':           { en: 'Free 4-in-1 health assessment', zh: '免费 4 合 1 健康检测' },
-  'incl.3':           { en: 'Free 30-minute Genkilogy NeckFix Therapy', zh: '免费 30 分钟元气肩颈疏通护理' },
+  'incl.3':           { en: 'Free Exclusive Genkilogy NeckFix Therapy', zh: '免费 独家元气肩颈护理' },
   'incl.4':           { en: 'Herbal dessert & wellness tea', zh: '糖水 + 养生茶' },
 
   /* ---------- 价值锚定 ---------- */
@@ -134,7 +134,7 @@ window.SANS26_I18N = {
   'value.l6':         { en: '26 years of physical outlets — proven hands, fast relief for the point that hurts', zh: '经营 26 年的线下店，专业手法，快速解决痛点' },
   'value.priceLabel': { en: 'Normally, one Genkilogy NeckFix Therapy session costs', zh: '平时，体验我们的元气肩颈护理，一个人收费是' },
   'value.price':      { en: 'RM298', zh: 'RM298' },
-  'value.freeLine':   { en: 'But for our 26th Anniversary, we are giving the 30-minute session away — free. Registering is all it takes.', zh: '但是！26 周年这一天，我们免费送出 30 分钟的体验疗程 —— 只要报名就能得到。' },
+  'value.freeLine':   { en: 'But for our 26th Anniversary, we are giving this Exclusive Genkilogy NeckFix Therapy away — free. Registering is all it takes.', zh: '但是！26 周年这一天，我们免费送出这个独家元气肩颈护理 —— 只要报名就能得到。' },
   'value.bubble':     { en: 'If you could experience it today, for free — how does that sound?', zh: '如果今天你能免费体验，你觉得如何？' },
 
   /* ---------- 稀缺 ---------- */

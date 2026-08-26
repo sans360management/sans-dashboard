@@ -327,7 +327,7 @@
         'DTEND:' + stamp(ev.endISO || ev.startISO),
         'SUMMARY:Sans Wellness 26th Anniversary — Free Neckcare Open House',
         'LOCATION:' + (pick(ev.venue) + ', ' + pick(ev.address)).replace(/,/g, '\\,'),
-        'DESCRIPTION:Your free 30-minute Genkilogy NeckFix Therapy session\\, 1-on-1 consultation and 4-in-1 health assessment. See you there.',
+        'DESCRIPTION:Your free Exclusive Genkilogy NeckFix Therapy session\\, 1-on-1 consultation and 4-in-1 health assessment. See you there.',
         'END:VEVENT',
         'END:VCALENDAR',
       ].join('\r\n');
