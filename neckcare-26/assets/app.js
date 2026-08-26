@@ -207,10 +207,17 @@
         });
       } else {
         var v = document.createElement('video');
-        v.src = brandSrc;
         v.controls = true;
         v.playsInline = true;
+        v.preload = 'metadata';   // 先只抓长度，不预载整支，省手机流量
         if (imgs.brandCover) v.poster = imgs.brandCover;
+        /* 档案还没上传 / 网址打错时，整个区块收起来，不要露出坏掉的播放器 */
+        v.addEventListener('error', function () {
+          brandBox.hidden = true;
+          console.warn('[Sans26] 活动介绍影片载不到，该区块已自动隐藏。网址：',
+                       String(brandSrc).slice(0, 120));
+        });
+        v.src = brandSrc;
         brandFrame.appendChild(v);
       }
       brandBox.hidden = false;
