@@ -197,6 +197,12 @@ def build():
 
     body = re.search(r'<body[^>]*>(.*)</body>', html, re.S).group(1)
 
+    # Event 结构化资料写在 <head> 里，只取 body 会把它丢掉 —— 这里捞出来一起带走。
+    # JSON-LD 放在文件任何位置都有效，Google 照样读得到。
+    ldjson = re.search(
+        r'<script type="application/ld\+json">.*?</script>', html, re.S)
+    ldjson = ldjson.group(0) + '\n\n' if ldjson else ''
+
     # 移除原本的外部档案引用，改成内嵌
     body = re.sub(r'<script src="assets/[^"]+"></script>\s*', '', body)
     body = body.replace('<link rel="stylesheet" href="assets/styles.css">', '')
@@ -249,6 +255,7 @@ def build():
 
     fragment = (
         '<!-- ===== Sans Wellness · 26 周年元气肩颈免费体验会 ===== -->\n'
+        + ldjson
         + override +
         '<style>\n@import url("%s");\n%s\n</style>\n\n'
         '<div id="sansnc">\n%s\n</div>\n\n'
