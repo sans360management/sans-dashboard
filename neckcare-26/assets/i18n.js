@@ -153,7 +153,7 @@ window.SANS26_I18N = {
   'about.sign':       { en: '— Sans Holistic Wellness Centre —', zh: '— Sans Wellness 养生美健康管理中心 —' },
   'about.awards':     { en: '20 local & international awards · Endorsed by the National Consumer Council · KPDN-certified chain', zh: '荣获 20 个国内外奖项 · 荣获国家消费局推荐 · 马来西亚贸消部认证连锁店' },
   'about.awardsAlt':  { en: 'Awards received by Sans Wellness', zh: 'Sans Wellness 获得的奖项' },
-  'about.videoTitle': { en: 'Get to know Sans Wellness', zh: '认识 Sans Wellness' },
+  'about.videoTitle': { en: 'A quick look at the event', zh: '带你先看看这场活动' },
   'about.coverAlt':   { en: 'Sans Holistic Wellness Centre — 26 years of inspiring wellness journeys', zh: 'Sans 养生美健康管理中心 —— 26 年养生旅程' },
 
   'fact.years':       { en: 'Years in practice', zh: '年专业经营' },

@@ -53,13 +53,20 @@ window.SANS26_CONFIG = {
   },
 
   /* ---- 4. 影片 --------------------------------------------
-     brand        = 品牌介绍影片：填 YouTube ID（如 'dQw4w9WgXcQ'）
+     brand        = 活动介绍影片：填 YouTube ID（如 'dQw4w9WgXcQ'）
                     或 .mp4 完整网址都可以
      testimonials = 顾客见证影片：YouTube ID 阵列，最多放 3 支
      留空 = 该区块自动不显示，不会留下空洞。
+
+     ⚠️ 影片一定要是完整网址，不能放进 assets/ 用相对路径 ——
+        贴进 GHL 后相对路径会找不到档案。上传方式：
+        GHL → Settings → Media Library → 上传 mp4 → 复制网址贴到下面。
+
+     等新的活动介绍影片：旧的 15 秒版本先移除，网址留在这里备查
+     'https://assets.cdn.filesafe.space/JOBK6AFJoAgvBGGODD6q/media/6911b1f0c3a1ea24872935db.mp4'
   --------------------------------------------------------- */
   videos: {
-    brand: 'https://assets.cdn.filesafe.space/JOBK6AFJoAgvBGGODD6q/media/6911b1f0c3a1ea24872935db.mp4',
+    brand: '',
     testimonials: [
       'https://youtu.be/xXXIsgiMHyQ?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
       'https://youtu.be/cVkKBuLmnRA?list=PLYWUTt9j7D2AVtGE9BJX4fh9qOcuq84Mt',
