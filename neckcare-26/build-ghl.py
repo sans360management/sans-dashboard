@@ -51,6 +51,17 @@ ID_NAMES = set()
 # 跟 HTML 里没被动过的 data-i18n="nav.offer" 对不上，翻译就悄悄消失。
 I18N_KEYS = set()
 
+# config.js 的栏位名（例如 'awards'、'hero'）也一律跳过。
+# 若不挡：imgs['awards'] 会被改成 imgs['snc-awards']，但 config 那边的 key
+# 没被动过，查不到值就静默降级 —— 图片永远不出现，也不会报错。
+CONFIG_KEYS = set()
+
+# 既不是类别、也不是 id / i18n key / config key 的字串常值：
+# 网址参数名、localStorage 键名。它们刚好跟 CSS 类别撞名，一律不准改。
+#   'lang'        → ?lang=zh 深连结，改掉就永远读不到语言参数
+#   'sans26.lang' → localStorage 键名，含句点会被误判成选择器
+KEEP_LITERALS = {'lang', 'sans26.lang'}
+
 
 def collect_classes(css):
     """从选择器（而不是属性值）里收集所有类别名。"""
@@ -77,20 +88,40 @@ def rename_in_html(html, names):
 
 def rename_in_js(js, names):
     """只改字串常值，避免动到 element.lang / el.className 这类属性存取。"""
+    renamed = []
+
     def fix(text):
+        if text in KEEP_LITERALS:             # 参数名 / 储存键名，原样保留
+            return text
         if text in ID_NAMES:                  # 是元素 id，原样保留
             return text
         if text in I18N_KEYS:                 # 是 i18n 字典的 key，原样保留
             return text
+        if text in CONFIG_KEYS:               # 是 config.js 的栏位名，原样保留
+            return text
         if '.' in text:                      # 像 '.field.has-error .err' 这种选择器
-            return rename_in_selector(text, names)
-        parts = re.split(r'(\s+)', text)      # 像 'is-in' 或 'form-status ' 这种类别名
-        if any(p in names for p in parts) and all(p in names or not p.strip() for p in parts):
-            return ''.join(PREFIX + p if p in names else p for p in parts)
-        return text
+            out = rename_in_selector(text, names)
+        else:
+            parts = re.split(r'(\s+)', text)  # 像 'is-in' 或 'form-status ' 这种类别名
+            if any(p in names for p in parts) and all(p in names or not p.strip() for p in parts):
+                out = ''.join(PREFIX + p if p in names else p for p in parts)
+            else:
+                out = text
+        if out != text:
+            renamed.append((text, out))
+        return out
 
-    return re.sub(r"(['\"])((?:[^'\"\\\n]|\\.)*?)\1",
-                  lambda m: m.group(1) + fix(m.group(2)) + m.group(1), js)
+    js = re.sub(r"(['\"])((?:[^'\"\\\n]|\\.)*?)\1",
+                lambda m: m.group(1) + fix(m.group(2)) + m.group(1), js)
+
+    # 把改过的字串印出来 —— 撞名的 bug 只会静默降级，不印就看不见
+    uniq = sorted(set(renamed))
+    print('   JS 字串常值改名 %d 种：' % len(uniq))
+    for old, new in uniq:
+        print('       %-28s → %s' % (repr(old), repr(new)))
+    print('   （上面每一条都该是真的 CSS 类别名。看到参数名 / 设定栏位名'
+          ' / 储存键名，就要加进 KEEP_LITERALS。）')
+    return js
 
 
 # ----------------------------------------------------------------- CSS 作用域
@@ -220,6 +251,9 @@ def build():
 
     global I18N_KEYS
     I18N_KEYS = set(re.findall(r"^\s*'([^']+)':\s*\{", read('assets/i18n.js'), re.M))
+
+    global CONFIG_KEYS
+    CONFIG_KEYS = set(re.findall(r"^\s*(\w+):", read('assets/config.js'), re.M))
 
     js = '\n'.join(read('assets/' + f) for f in ('config.js', 'i18n.js', 'app.js', 'form.js'))
     js = rename_in_js(js, CLASS_NAMES)

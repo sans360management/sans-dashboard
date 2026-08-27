@@ -26,7 +26,10 @@ window.SANS26_I18N = {
   'cta.parkVideo':    { en: 'Watch the parking guide', zh: '观看停车指引影片' },
 
   /* ---------- Hero ---------- */
-  'hero.eyebrow':     { en: '26th Anniversary · Free Neckcare Open House', zh: '26 周年 · 元气肩颈免费体验会' },
+  /*   = 不断行空格。唯一允许断行的地方是「·」后面那个正常空格，
+     所以只会断成「26TH ANNIVERSARY ·／FREE NECKCARE OPEN HOUSE」。
+     ⚠️ 不能写 &nbsp; —— app.js 用 textContent 套字，HTML 实体会原样显示。 */
+  'hero.eyebrow':     { en: '26th Anniversary · Free Neckcare Open House', zh: '26 周年 · 元气肩颈免费体验会' },
   'hero.title1':      { en: 'Chronic neck pain', zh: '颈椎老毛病' },
   'hero.title2':      { en: 'starts exactly like this.', zh: '就是这样开始的！' },
   'hero.sub':         { en: 'You are warmly invited to our 26th Anniversary wellness open house — “Goodbye to the Hidden Neck Problem”.', zh: '诚挚邀请你出席 26 周年「告别"隐形"颈椎病」健康线下体验会' },

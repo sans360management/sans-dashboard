@@ -73,6 +73,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .eyebrow--muted { color: var(--cocoa-45); }
 
+/* 窄屏收窄字距：eyebrow 英文版用不断行空格黏成一整块
+   （「FREE NECKCARE OPEN HOUSE」），0.26em 在 320px 会顶到边。 */
+@media (max-width: 430px) {
+  .eyebrow { letter-spacing: 0.16em; }
+}
+
 .h-display {
   font-family: var(--display);
   font-weight: 600;
@@ -80,6 +86,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   line-height: 1.08;
   letter-spacing: -0.015em;
   margin: 0 0 20px;
+  text-wrap: balance;
 }
 .h-section {
   font-family: var(--display);
@@ -87,6 +94,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-size: clamp(1.9rem, 3.8vw, 3rem);
   line-height: 1.14;
   margin: 0 0 18px;
+  text-wrap: balance;
 }
 .h-card {
   font-family: var(--display);
@@ -94,12 +102,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-size: 1.35rem;
   line-height: 1.28;
   margin: 0 0 10px;
+  text-wrap: balance;
 }
 .lede {
   font-size: clamp(1rem, 1.5vw, 1.12rem);
   color: var(--cocoa-70);
   max-width: 60ch;
   margin: 0 0 26px;
+  text-wrap: pretty;
 }
 .muted { color: var(--cocoa-70); }
 .center { text-align: center; }
@@ -422,7 +432,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: rgba(240,131,33,0.35); }
-.card p { margin: 0; color: var(--cocoa-70); font-size: 0.93rem; }
+.card p { margin: 0; color: var(--cocoa-70); font-size: 0.93rem; text-wrap: pretty; }
 .card__icon {
   width: 46px; height: 46px;
   display: grid; place-items: center;
@@ -906,6 +916,7 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   font-weight: 600;
   color: var(--orange-dk);
   margin: 0 0 20px;
+  text-wrap: pretty;
 }
 
 .pills { display: flex; flex-wrap: wrap; gap: 9px; list-style: none; margin: 0 0 26px; padding: 0; }
@@ -983,6 +994,7 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   font-size: clamp(1.15rem, 2.2vw, 1.5rem);
   font-weight: 600;
   color: var(--orange-dk);
+  text-wrap: pretty;
 }
 
 /* ---------- 教育 ---------- */
@@ -1003,7 +1015,8 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   background: var(--orange);
   margin: 14px 0 0;
 }
-.edu__lead { font-weight: 600; font-size: 1.02rem; margin: 18px 0 12px; }
+.edu__lead { font-weight: 600; font-size: 1.02rem; margin: 18px 0 12px;   text-wrap: pretty;
+}
 .edu__card p { font-size: 0.94rem; }
 
 /* ---------- Offer 卡 ---------- */
@@ -1122,18 +1135,21 @@ body.is-ready .hero .btn-row { animation: rise .8s ease .70s both; }
   line-height: 1.15;
   color: var(--orange-dk);
   margin: 0 0 16px;
+  text-wrap: balance;
 }
 .offer26__lead {
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.6;
   margin: 0 0 14px;
+  text-wrap: pretty;
 }
 .offer26__p {
   font-size: 0.95rem;
   color: var(--cocoa-70);
   line-height: 1.65;
   margin: 0 0 14px;
+  text-wrap: pretty;
 }
 .offer26__limit {
   display: block;
