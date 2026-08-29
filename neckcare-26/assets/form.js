@@ -75,6 +75,14 @@
     if (!out.fbc && out.fbclid) {
       out.fbc = 'fb.1.' + Date.now() + '.' + out.fbclid;
     }
+
+    // 反过来：cookie 还在但网址已经乾净（回访者），从 _fbc 把 fbclid 拆回来。
+    // GHL 的 Meta CAPI 动作要的正是 fbclid 这一个值，所以能补就补。
+    // _fbc 的格式是 fb.<子网域索引>.<时间戳>.<fbclid>，第四段之后不再切。
+    if (!out.fbclid && out.fbc) {
+      var parts = out.fbc.split('.');
+      if (parts.length >= 4 && parts[0] === 'fb') out.fbclid = parts.slice(3).join('.');
+    }
     return out;
   }
 
