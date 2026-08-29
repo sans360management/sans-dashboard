@@ -25,6 +25,100 @@
     return url[lang] || url.en || url.zh || '';
   }
 
+  /* ============================================================
+     广告归因：把点击资讯带进 GHL 表单
+     ------------------------------------------------------------
+     表单跑在跨网域 iframe 里（api.qiai.tech），父页面的任何东西
+     都不会自己传进去。这里把 Meta 的点击识别码跟 UTM 参数接在
+     iframe 网址后面，GHL 表单那边设了 Query Key 的隐藏栏位就会接住。
+
+     少了这些值，Conversions API 送出的事件 Meta 收得到，但对不回
+     是哪一支广告带来的 —— 报表上每一组的 Results 就会是一片「—」。
+
+     _fbc / _fbp 是 Meta Pixel 自己写的第一方 cookie，同网域读得到。
+     Pixel 还没写进去时（同一次载入的竞速），就用网址上的 fbclid
+     照 Meta 的格式自己组一个：fb.1.<毫秒时间戳>.<fbclid>
+     ============================================================ */
+
+  var ATTR_KEY = 'sans26.attr';
+  var ATTR_TTL = 90 * 24 * 60 * 60 * 1000;   // 跟 Meta 的 _fbc cookie 一样 90 天
+
+  /* 要带进表单的参数。GHL 表单的隐藏栏位 Query Key 要跟这些名字一模一样。 */
+  var ATTR_PARAMS = [
+    'fbc', 'fbp', 'fbclid',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+    'ad_id', 'adset_id', 'campaign_id',
+  ];
+
+  function readCookie(name) {
+    var m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? decodeURIComponent(m[2]) : '';
+  }
+
+  /* 这一次载入能拿到的归因资讯 */
+  function freshAttribution() {
+    var q;
+    try { q = new URLSearchParams(location.search); } catch (e) { return {}; }
+
+    var out = {};
+    ATTR_PARAMS.forEach(function (k) {
+      var v = q.get(k);
+      if (v) out[k] = v;
+    });
+
+    var fbc = readCookie('_fbc');
+    var fbp = readCookie('_fbp');
+    if (fbc) out.fbc = fbc;
+    if (fbp) out.fbp = fbp;
+
+    // Pixel 还没写 _fbc 时，用网址上的 fbclid 自己组一个
+    if (!out.fbc && out.fbclid) {
+      out.fbc = 'fb.1.' + Date.now() + '.' + out.fbclid;
+    }
+    return out;
+  }
+
+  /* 顾客常常是「先看一次、过几天再回来填」，那时候网址上已经没有
+     fbclid 了。所以第一次拿到就存起来，之后没有新的就沿用旧的。 */
+  function attribution() {
+    var fresh = freshAttribution();
+    var saved = {};
+
+    try {
+      var raw = JSON.parse(localStorage.getItem(ATTR_KEY) || 'null');
+      if (raw && raw.at && (Date.now() - raw.at) < ATTR_TTL && raw.data) saved = raw.data;
+    } catch (e) { /* localStorage 被封锁就当没存过 */ }
+
+    var merged = {};
+    ATTR_PARAMS.forEach(function (k) {
+      var v = fresh[k] || saved[k];
+      if (v) merged[k] = v;
+    });
+
+    // 这一次有拿到新东西才覆写，免得旧的归因被空值洗掉
+    if (Object.keys(fresh).length) {
+      try {
+        localStorage.setItem(ATTR_KEY, JSON.stringify({ at: Date.now(), data: merged }));
+      } catch (e) { /* 无痕模式写不进去，不影响这一次 */ }
+    }
+    return merged;
+  }
+
+  /* 把归因参数接到表单网址后面。表单本身已经带参数时不会覆盖掉。 */
+  function withAttribution(formUrl) {
+    var attr = attribution();
+    var keys = Object.keys(attr);
+    if (!keys.length) return formUrl;
+
+    var u;
+    try { u = new URL(formUrl, location.href); } catch (e) { return formUrl; }
+
+    keys.forEach(function (k) {
+      if (!u.searchParams.has(k)) u.searchParams.set(k, attr[k]);
+    });
+    return u.toString();
+  }
+
   /* 载入 GHL 官方的 form_embed.js —— 它负责依表单内容自动调整 iframe 高度。
      白标网域优先，失败再退回官方网域。 */
   function loadEmbedScript(formUrl) {
@@ -80,7 +174,7 @@
     frame.setAttribute('data-deactivation-type', 'neverDeactivate');
     frame.setAttribute('data-form-id', formId);
     frame.setAttribute('data-layout-iframe-id', 'inline-' + formId);
-    frame.src = url;
+    frame.src = withAttribution(url);
 
     wrap.classList.remove('is-hidden');
     if (custom) custom.classList.add('is-hidden');
@@ -94,7 +188,9 @@
     // 切换语言时换成另一份表单（有设定 { en, zh } 才会换）
     document.addEventListener('sans26:langchange', function (e) {
       var next = embedUrlFor(e.detail.lang);
-      if (next && next !== frame.src) frame.src = next;
+      if (!next) return;
+      next = withAttribution(next);
+      if (next !== frame.src) frame.src = next;
     });
 
     return true;
