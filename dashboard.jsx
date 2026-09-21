@@ -300,6 +300,8 @@ const SALES_COLS = [
   { key: "enrol", label: "Enrolment", money: false },
   { key: "pct", label: "Enrolment %", money: false, pct: true },
   { key: "first", label: "First Course", money: true },
+  // 每位成交客户平均价值 = First Course ÷ Enrolment（只在 Monthly 月度表显示）
+  { key: "avgConv", label: "Average Customer Conversion Value", money: true, avg: true, monthOnly: true },
 ];
 const enrolPct = (r) => (r.consult > 0 ? (r.enrol / r.consult) * 100 : 0);
 const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -320,9 +322,10 @@ const fmtMonthKey = (iso) => { // "2026-06" -> "Jun 26"
 };
 
 function SalesTable({ rows, total, showToday, firstColLabel }) {
-  const cols = SALES_COLS.filter((c) => showToday || !c.dayOnly);
+  const cols = SALES_COLS.filter((c) => (showToday ? !c.monthOnly : !c.dayOnly));
   const cell = (r, c) => {
     if (c.pct) return enrolPct(r).toFixed(1) + "%";
+    if (c.avg) return r.enrol > 0 ? money(r.first / r.enrol) : "—";
     if (c.money) return r[c.key] != null ? money(r[c.key]) : "—";
     return r[c.key] != null ? Math.round(r[c.key]).toLocaleString() : "—";
   };
