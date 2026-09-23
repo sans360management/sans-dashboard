@@ -239,7 +239,14 @@ export default function TeamApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: k }),
       });
-      if (r.status === 401) { setPhase("auth"); setErr("这条链接的 key 不对，或者已经被换掉了。"); return; }
+      if (r.status === 401) {
+        const j = await r.json().catch(() => ({}));
+        setPhase("auth");
+        setErr(j.teamKeyConfigured === false
+          ? "这个部署还没设 TEAM_KEY。去 Vercel 的 Environment Variables 加上它（记得勾这个环境），然后重新 deploy 一次 —— 环境变量是在部署那一刻固定的，改完不重新 deploy 不会生效。"
+          : "这条链接的 key 不对。核对 Vercel 里 TEAM_KEY 的值（注意前后空格同大小写）。");
+        return;
+      }
       const j = await r.json();
       if (!r.ok || j.error) throw new Error(j.error || "HTTP " + r.status);
       keyRef.current = k;

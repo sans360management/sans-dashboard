@@ -66,7 +66,9 @@ export default async function handler(req, res) {
 
   const user = resolveUser(password);
   if (!user) {
-    res.status(401).json({ error: "unauthorized" });
+    // 分得开「服务器根本没设 TEAM_KEY」同「key 填错了」——
+    // 只讲有没有配置，不泄漏值本身。少了这个，/team 打不开时只能盲猜。
+    res.status(401).json({ error: "unauthorized", teamKeyConfigured: !!process.env.TEAM_KEY });
     return;
   }
 
