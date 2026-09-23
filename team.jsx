@@ -116,16 +116,18 @@ function Slider({ id, label, kind = "money", min, max, step, value, onChange, en
     onChange(Math.min(max, Math.max(min, v)));
   };
 
+  const shown = draft != null ? draft : fmt(value);
+
   return (
     <div>
       <label htmlFor={id} style={{
         display: "flex", justifyContent: "space-between", alignItems: "baseline",
         gap: 10, fontSize: 13, color: C.ink, marginBottom: 7,
       }}>
-        <span>{label}</span>
+        <span style={{ minWidth: 0 }}>{label}</span>
         <input
           type="text" inputMode="decimal" aria-label={label + "（可直接输入）"}
-          value={draft != null ? draft : fmt(value)}
+          value={shown}
           onChange={(e) => setDraft(e.target.value)}
           onFocus={(e) => { setDraft(String(value)); requestAnimationFrame(() => e.target.select()); }}
           onBlur={(e) => commit(e.target.value)}
@@ -136,10 +138,14 @@ function Slider({ id, label, kind = "money", min, max, step, value, onChange, en
           style={{
             fontFamily: "ui-monospace, monospace", fontSize: 15, fontWeight: 700,
             color: C.brown, fontVariantNumeric: "tabular-nums", textAlign: "right",
-            width: "9ch", padding: "2px 6px", background: draft != null ? "#fff" : "transparent",
-            border: `1px solid ${draft != null ? C.brown : "transparent"}`,
-            borderBottom: `1px dashed ${draft != null ? C.brown : C.line}`,
-            borderRadius: 5, outline: "none", cursor: "text", minWidth: 0,
+            // 宽度跟着内容走 —— 写死的话 RM5,000,000 会被切成 "RM5,000,"
+            width: `calc(${Math.max(6, shown.length)}ch + 20px)`,
+            flex: "none", padding: "4px 8px",
+            background: draft != null ? "#fff" : C.surface,
+            border: `1px solid ${draft != null ? C.brown : C.line}`,
+            boxShadow: draft != null ? `0 0 0 3px ${C.sand}` : "none",
+            borderRadius: 7, outline: "none", cursor: "text", minWidth: 0,
+            transition: "border-color .12s, box-shadow .12s, background .12s",
           }} />
       </label>
       <input id={id} type="range" min={min} max={max} step={step} value={value}
@@ -547,6 +553,7 @@ function Page1({ S, setV, mode, setMode, P, N }) {
             ? "给一个 Sales 目标，倒推出这个月要几多 Lead、要花几多广告预算。"
             : "给一笔广告预算，正推出这笔钱能带几多 Lead，最后落到几多 New Lead Sales。"}
           {N.avgValue && " 客单价同约到率的起点已经用你表里的实况填好。"}
+          <b style={{ color: C.ink, fontWeight: 600 }}> 每个数字都可以直接点进去打，不用拖拉杆。</b>
         </p>
       </div>
 
