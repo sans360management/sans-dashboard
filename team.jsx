@@ -12,6 +12,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
+import { TXT } from "./team-i18n.js";
 
 /* --------------------------------------------------------------- 调色板 */
 const C = {
@@ -49,6 +50,14 @@ const monthKeyFromISO = (iso) => {
   const p = String(iso).split("-");
   return p.length >= 2 ? MON[+p[1] - 1] + " " + String(p[0]).slice(2) : null;
 };
+
+// 文案里 **…** 的部分渲染成粗体等宽 —— 让两种语言各自决定强调哪一段，
+// 不用把句子拆成一堆 JSX 碎片。
+function Rich({ s }) {
+  return <>{String(s).split(/\*\*/).map((p, i) => (i % 2
+    ? <b key={i} style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{p}</b>
+    : <span key={i}>{p}</span>))}</>;
+}
 
 /* --------------------------------------------------------------- 小组件 */
 function Card({ children, style }) {
@@ -126,7 +135,7 @@ function Slider({ id, label, kind = "money", min, max, step, value, onChange, en
       }}>
         <span style={{ minWidth: 0 }}>{label}</span>
         <input
-          type="text" inputMode="decimal" aria-label={label + "（可直接输入）"}
+          type="text" inputMode="decimal" aria-label={label}
           value={shown}
           onChange={(e) => setDraft(e.target.value)}
           onFocus={(e) => { setDraft(String(value)); requestAnimationFrame(() => e.target.select()); }}
@@ -282,7 +291,23 @@ export default function TeamApp() {
   const [tab, setTab] = useState(1);
   const [mode, setMode] = useState("goal");
   const [S, setS] = useState(DEF);
+  const [lang, setLang] = useState(() => {
+    try { return localStorage.getItem("sans_team_lang") === "zh" ? "zh" : "en"; } catch (e) { return "en"; }
+  });
   const keyRef = useRef("");
+
+  // t("key", ...args) —— 字典值是字串就直接用，是函数就带参数叫一次
+  const t = useMemo(() => {
+    const i = lang === "zh" ? 1 : 0;
+    return (k, ...a) => {
+      const v = TXT[k] && TXT[k][i];
+      return typeof v === "function" ? v(...a) : (v == null ? k : v);
+    };
+  }, [lang]);
+  const pickLang = (l) => {
+    setLang(l);
+    try { localStorage.setItem("sans_team_lang", l); } catch (e) { /* 无痕模式 */ }
+  };
 
   const now = new Date();
   const cur = monthKey(now);
@@ -300,9 +325,7 @@ export default function TeamApp() {
       if (r.status === 401) {
         const j = await r.json().catch(() => ({}));
         setPhase("auth");
-        setErr(j.teamKeyConfigured === false
-          ? "这个部署还没设 TEAM_KEY。去 Vercel 的 Environment Variables 加上它（记得勾这个环境），然后重新 deploy 一次 —— 环境变量是在部署那一刻固定的，改完不重新 deploy 不会生效。"
-          : "这条链接的 key 不对。核对 Vercel 里 TEAM_KEY 的值（注意前后空格同大小写）。");
+        setErr(j.teamKeyConfigured === false ? "errNoTeamKey" : "errBadKey");
         return;
       }
       const j = await r.json();
@@ -396,18 +419,17 @@ export default function TeamApp() {
   /* ================================================================ 门禁 */
   if (phase === "auth" || (phase === "error" && !data)) {
     return (
-      <Shell bare>
+      <Shell bare t={t} lang={lang} setLang={pickLang}>
         <Card style={{ maxWidth: 420, margin: "12vh auto 0" }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: C.ink, marginBottom: 6 }}>Lead &amp; Ads 预算推算</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: C.ink, marginBottom: 6 }}>{t("appTitle")}</div>
           <p style={{ fontSize: 13.5, color: C.sub, margin: "0 0 14px", lineHeight: 1.6 }}>
-            这一页要用团队 key 打开。正常情况下链接里已经带了 key，一点就进。
-            如果你是手动开的，把 key 贴在下面。
+            {t("authIntro")}
           </p>
-          {err && <p style={{ fontSize: 13, color: CRIT, margin: "0 0 12px" }}>{err}</p>}
+          {err && <p style={{ fontSize: 13, color: CRIT, margin: "0 0 12px" }}>{TXT[err] ? t(err) : err}</p>}
           <form onSubmit={(e) => { e.preventDefault(); if (keyInput.trim()) load(keyInput.trim()); }}>
             <input
               type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="团队 key" autoFocus
+              placeholder={t("authKey")} autoFocus
               style={{
                 width: "100%", padding: "10px 12px", fontSize: 15, borderRadius: 9,
                 border: `1px solid ${C.line}`, background: C.surface, color: C.ink,
@@ -417,7 +439,7 @@ export default function TeamApp() {
               marginTop: 10, width: "100%", padding: "10px 12px", fontSize: 14.5,
               fontWeight: 600, borderRadius: 9, border: 0, background: C.brown,
               color: "#fff", cursor: "pointer",
-            }}>进入</button>
+            }}>{t("authEnter")}</button>
           </form>
         </Card>
       </Shell>
@@ -425,9 +447,9 @@ export default function TeamApp() {
   }
   if (phase === "loading" || !N) {
     return (
-      <Shell bare>
+      <Shell bare t={t} lang={lang} setLang={pickLang}>
         <div style={{ textAlign: "center", padding: "18vh 16px", color: C.sub, fontSize: 14 }}>
-          读取中…
+          {t("loading")}
         </div>
       </Shell>
     );
@@ -439,27 +461,27 @@ export default function TeamApp() {
 
   return (
     <Shell
-      tab={tab} setTab={setTab}
-      stamp={updatedAt ? `${cur} · 数据 ${updatedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : ""}
+      tab={tab} setTab={setTab} t={t} lang={lang} setLang={pickLang}
+      stamp={updatedAt ? t("stamp", cur, updatedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })) : ""}
       onRefresh={() => keyRef.current && load(keyRef.current)}
       err={phase === "error" ? err : ""}
     >
       {tab === 1 && (
-        <Page1 S={S} setV={setV} mode={mode} setMode={setMode} P={P} N={N} />
+        <Page1 S={S} setV={setV} mode={mode} setMode={setMode} P={P} N={N} t={t} />
       )}
       {tab === 2 && (
-        <Page2 N={N} cur={cur} />
+        <Page2 N={N} cur={cur} t={t} />
       )}
       {tab === 3 && (
-        <Page3 S={S} P={P} N={N} prog={prog} cur={cur} history={history} goal={goal} daysInMonth={daysInMonth} />
+        <Page3 S={S} P={P} N={N} prog={prog} cur={cur} history={history} goal={goal} daysInMonth={daysInMonth} t={t} />
       )}
     </Shell>
   );
 }
 
 /* --------------------------------------------------------------- 外壳 */
-function Shell({ children, tab, setTab, stamp, onRefresh, bare, err }) {
-  const TABS = [["1", "目标"], ["2", "现在"], ["3", "对比"]];
+function Shell({ children, tab, setTab, stamp, onRefresh, bare, err, t, lang, setLang }) {
+  const TABS = [["1", t("tab1")], ["2", t("tab2")], ["3", t("tab3")]];
   return (
     <div style={{ minHeight: "100vh", background: C.surface, color: C.ink,
       fontFamily: '"Archivo","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif' }}>
@@ -469,18 +491,31 @@ function Shell({ children, tab, setTab, stamp, onRefresh, bare, err }) {
       }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: bare ? 10 : 8 }}>
-            <span style={{ fontWeight: 700, fontSize: 15.5, marginRight: "auto" }}>Lead &amp; Ads 预算推算</span>
+            <span style={{ fontWeight: 700, fontSize: 15.5, marginRight: "auto" }}>{t("appTitle")}</span>
             {stamp && <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5, color: C.sub }}>{stamp}</span>}
+            <div style={{
+              display: "inline-flex", background: C.sand, border: `1px solid ${C.line}`,
+              borderRadius: 8, padding: 2, gap: 2,
+            }} role="group" aria-label="Language">
+              {[["en", "EN"], ["zh", "中文"]].map(([code, name]) => (
+                <button key={code} onClick={() => setLang(code)} aria-pressed={lang === code} style={{
+                  appearance: "none", border: 0, background: lang === code ? "#fff" : "none",
+                  fontSize: 12, fontWeight: lang === code ? 700 : 500,
+                  color: lang === code ? C.ink : C.sub, padding: "3px 9px", borderRadius: 6,
+                  cursor: "pointer", whiteSpace: "nowrap",
+                }}>{name}</button>
+              ))}
+            </div>
             {onRefresh && (
               <button onClick={onRefresh} style={{
                 fontSize: 12.5, fontWeight: 600, padding: "5px 11px", borderRadius: 8,
                 border: `1px solid ${C.line}`, background: "#fff", color: C.ink, cursor: "pointer",
-              }}>重新读取</button>
+              }}>{t("refresh")}</button>
             )}
           </div>
           {!bare && (
             <div style={{ display: "flex", gap: 2 }} role="tablist">
-              {TABS.map(([n, t], i) => {
+              {TABS.map(([n, lbl], i) => {
                 const on = tab === i + 1;
                 return (
                   <button key={n} role="tab" aria-selected={on} onClick={() => { setTab(i + 1); window.scrollTo(0, 0); }}
@@ -494,7 +529,7 @@ function Shell({ children, tab, setTab, stamp, onRefresh, bare, err }) {
                       fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 700,
                       width: 17, height: 17, borderRadius: "50%", display: "grid", placeItems: "center",
                       background: on ? C.brown : C.sand, color: on ? "#fff" : C.sub,
-                    }}>{n}</span>{t}
+                    }}>{n}</span>{lbl}
                   </button>
                 );
               })}
@@ -507,7 +542,7 @@ function Shell({ children, tab, setTab, stamp, onRefresh, bare, err }) {
           <div style={{
             border: `1px solid ${C.line}`, borderLeft: `4px solid ${CRIT}`, borderRadius: 10,
             background: "#fff", padding: "11px 14px", marginBottom: 18, fontSize: 13, color: C.ink,
-          }}>刷新失败：{err}　—　下面显示的是上一次成功读到的数据。</div>
+          }}>{t("refreshFail", err)}</div>
         )}
         {children}
       </div>
@@ -516,19 +551,19 @@ function Shell({ children, tab, setTab, stamp, onRefresh, bare, err }) {
 }
 
 /* --------------------------------------------------------------- 第 1 页 */
-function Page1({ S, setV, mode, setMode, P, N }) {
+function Page1({ S, setV, mode, setMode, P, N, t }) {
   const goal = mode === "goal";
   const steps = [
-    { l: goal ? "需要 Lead" : "买到 Lead", v: P.leads, c: C.goldLt, conv: `${goal ? "÷" : "×"} ${pct(S.r1)} 约到率` },
-    { l: "Appointment", v: P.appt, c: C.gold, conv: `${goal ? "÷" : "×"} ${pct(S.r2)} 到场率` },
-    { l: "Show Up 到场", v: P.showup, c: C.clay, conv: `${goal ? "÷" : "×"} ${pct(S.r3)} 成交率` },
-    { l: "Enroll 成交", v: P.enroll, c: C.brown, conv: `× ${rm(S.value)} 客单价` },
+    { l: goal ? t("fNeedLead") : t("fGotLead"), v: P.leads, c: C.goldLt, conv: t("convAppt", goal ? "÷" : "×", pct(S.r1)) },
+    { l: t("fAppt"), v: P.appt, c: C.gold, conv: t("convShow", goal ? "÷" : "×", pct(S.r2)) },
+    { l: t("fShowUp"), v: P.showup, c: C.clay, conv: t("convClose", goal ? "÷" : "×", pct(S.r3)) },
+    { l: t("fEnroll"), v: P.enroll, c: C.brown, conv: t("convValue", rm(S.value)) },
   ];
   const mx = Math.max(1, P.leads);
   const cpls = [
-    { t: "乐观", v: Math.max(5, Math.round(S.cpl * 0.7)), c: C.goldLt },
-    { t: "目标", v: Math.round(S.cpl), c: C.gold, target: true },
-    { t: "悲观", v: Math.round(S.cpl * 1.4), c: C.clay },
+    { lbl: t("scenOpt"), v: Math.max(5, Math.round(S.cpl * 0.7)), c: C.goldLt },
+    { lbl: t("scenTarget"), v: Math.round(S.cpl), c: C.gold, target: true },
+    { lbl: t("scenBad"), v: Math.round(S.cpl * 1.4), c: C.clay },
   ];
 
   return (
@@ -538,22 +573,20 @@ function Page1({ S, setV, mode, setMode, P, N }) {
           display: "inline-flex", background: C.sand, border: `1px solid ${C.line}`,
           borderRadius: 10, padding: 3, gap: 3, marginBottom: 12,
         }}>
-          {[["goal", "以目标为导向"], ["budget", "以广告费为导向"]].map(([m, t]) => (
+          {[["goal", t("modeGoal")], ["budget", t("modeBudget")]].map(([m, lbl]) => (
             <button key={m} onClick={() => setMode(m)} aria-pressed={mode === m} style={{
               appearance: "none", border: 0, background: mode === m ? "#fff" : "none",
               fontSize: 13.5, fontWeight: mode === m ? 700 : 500,
               color: mode === m ? C.ink : C.sub, padding: "6px 14px", borderRadius: 7,
               cursor: "pointer", whiteSpace: "nowrap",
               boxShadow: mode === m ? "0 1px 2px rgba(85,33,2,.10)" : "none",
-            }}>{t}</button>
+            }}>{lbl}</button>
           ))}
         </div>
         <p style={{ fontSize: 14, color: C.sub, margin: 0, maxWidth: "62ch", lineHeight: 1.6 }}>
-          {goal
-            ? "给一个 Sales 目标，倒推出这个月要几多 Lead、要花几多广告预算。"
-            : "给一笔广告预算，正推出这笔钱能带几多 Lead，最后落到几多 New Lead Sales。"}
-          {N.avgValue && " 客单价同约到率的起点已经用你表里的实况填好。"}
-          <b style={{ color: C.ink, fontWeight: 600 }}> 每个数字都可以直接点进去打，不用拖拉杆。</b>
+          {goal ? t("blurbGoal") : t("blurbBudget")}
+          {N.avgValue && t("blurbSeeded")}
+          <b style={{ color: C.ink, fontWeight: 600 }}>{t("blurbType")}</b>
         </p>
       </div>
 
@@ -564,30 +597,30 @@ function Page1({ S, setV, mode, setMode, P, N }) {
         {goal ? (
           <>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-sales" label="这个月 Sales 目标" kind="money" min={500000} max={10000000} step={100000}
+              <Slider id="s-sales" label={t("qSales")} kind="money" min={500000} max={10000000} step={100000}
                 value={S.sales} onChange={setV("sales")} ends={["RM0.5M", "RM10M"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-newpct" label="New Lead Sales 占几多 %" kind="pct" min={5} max={100} step={1}
+              <Slider id="s-newpct" label={t("qNewPct")} kind="pct" min={5} max={100} step={1}
                 value={Math.round(S.newPct * 100)} onChange={(v) => setV("newPct")(v / 100)} ends={["5%", "100%"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-cpl" label="Cost Per Lead 预算" kind="money" min={10} max={300} step={5}
+              <Slider id="s-cpl" label={t("qCpl")} kind="money" min={10} max={300} step={5}
                 value={S.cpl} onChange={setV("cpl")} ends={["RM10", "RM300"]} />
             </div>
           </>
         ) : (
           <>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-budget" label="这个月广告费打算花几多" kind="money" min={5000} max={400000} step={1000}
+              <Slider id="s-budget" label={t("qBudget")} kind="money" min={5000} max={400000} step={1000}
                 value={S.budget} onChange={setV("budget")} ends={["RM5K", "RM400K"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-cpl2" label="Cost Per Lead 估几多" kind="money" min={10} max={300} step={5}
+              <Slider id="s-cpl2" label={t("qCplEst")} kind="money" min={10} max={300} step={5}
                 value={S.cpl} onChange={setV("cpl")} ends={["RM10", "RM300"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-value2" label="平均客单价" kind="money" min={500} max={12000} step={100}
+              <Slider id="s-value2" label={t("qValue")} kind="money" min={500} max={12000} step={100}
                 value={S.value} onChange={setV("value")} ends={["RM500", "RM12K"]} />
             </div>
           </>
@@ -596,25 +629,25 @@ function Page1({ S, setV, mode, setMode, P, N }) {
 
       <details style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 14, overflow: "hidden" }}>
         <summary style={{ cursor: "pointer", padding: "12px 16px", fontSize: 13.5, fontWeight: 600, color: C.sub }}>
-          进阶假设 — 客单价同三段转化率
+          {t("advSummary")}
         </summary>
         <div style={{
           padding: "2px 16px 18px", display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 18,
         }}>
-          <Slider id="s-value" label="平均客单价" kind="money" min={500} max={12000} step={100}
+          <Slider id="s-value" label={t("qValue")} kind="money" min={500} max={12000} step={100}
             value={S.value} onChange={setV("value")} />
-          <Slider id="s-r1" label="Lead → Appt" kind="pct" min={5} max={100} step={1}
+          <Slider id="s-r1" label={t("rLeadAppt")} kind="pct" min={5} max={100} step={1}
             value={Math.round(S.r1 * 100)} onChange={(v) => setV("r1")(v / 100)} />
-          <Slider id="s-r2" label="Appt → Show Up" kind="pct" min={5} max={100} step={1}
+          <Slider id="s-r2" label={t("rApptShow")} kind="pct" min={5} max={100} step={1}
             value={Math.round(S.r2 * 100)} onChange={(v) => setV("r2")(v / 100)} />
-          <Slider id="s-r3" label="Show Up → Enroll" kind="pct" min={5} max={100} step={1}
+          <Slider id="s-r3" label={t("rShowEnroll")} kind="pct" min={5} max={100} step={1}
             value={Math.round(S.r3 * 100)} onChange={(v) => setV("r3")(v / 100)} />
         </div>
       </details>
 
       <div>
-        <Blk>{goal ? "倒推出来的 funnel" : "正推出来的 funnel"}</Blk>
+        <Blk>{goal ? t("funnelBack") : t("funnelFwd")}</Blk>
         <div style={{
           display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(240px,290px)", gap: 1,
           background: C.line, border: `1px solid ${C.line}`, borderRadius: 14, overflow: "hidden",
@@ -641,21 +674,21 @@ function Page1({ S, setV, mode, setMode, P, N }) {
           </div>
           <div style={{ background: C.sand, padding: 17, display: "flex", flexDirection: "column", justifyContent: "center", gap: 18 }}>
             <div>
-              <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 6 }}>{goal ? "需要广告预算" : "这笔广告预算"}</div>
+              <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 6 }}>{goal ? t("budgetNeed") : t("budgetThis")}</div>
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 30, fontWeight: 700, letterSpacing: "-.025em", fontVariantNumeric: "tabular-nums" }}>
                 {rm(P.budget)}
               </div>
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5, color: C.sub, marginTop: 8 }}>
-                每周 {rm(P.budget / WEEKS)}<br />{int(P.leads)} lead × {rm(S.cpl)}
+                {t("perWeekV", rm(P.budget / WEEKS))}<br />{t("leadsTimes", int(P.leads), rm(S.cpl))}
               </div>
             </div>
             <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 17 }}>
-              <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 6 }}>预测 New Lead Sales</div>
+              <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 6 }}>{t("predSales")}</div>
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 30, fontWeight: 700, letterSpacing: "-.025em", color: C.brown, fontVariantNumeric: "tabular-nums" }}>
                 {rm(P.newSales)}
               </div>
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5, color: C.sub, marginTop: 8 }}>
-                {int(P.enroll)} 成交 × {rm(S.value)}{P.roas ? <><br />ROAS {P.roas.toFixed(1)}×</> : null}
+                {t("enrolTimes", int(P.enroll), rm(S.value))}{P.roas ? <><br />ROAS {P.roas.toFixed(1)}×</> : null}
               </div>
             </div>
           </div>
@@ -663,7 +696,7 @@ function Page1({ S, setV, mode, setMode, P, N }) {
       </div>
 
       <div>
-        <Blk>CPL 跑成不同价钱会怎样</Blk>
+        <Blk>{t("scenTitle")}</Blk>
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 1,
           background: C.line, border: `1px solid ${C.line}`, borderRadius: 14, overflow: "hidden",
@@ -673,13 +706,13 @@ function Page1({ S, setV, mode, setMode, P, N }) {
             return (
               <div key={sc.t} style={{ background: sc.target ? C.sand : "#fff", padding: "13px 14px" }}>
                 <div style={{ height: 4, borderRadius: 2, background: sc.c, marginBottom: 9 }} />
-                <div style={{ fontSize: 11, letterSpacing: ".07em", textTransform: "uppercase", color: C.sub, marginBottom: 3 }}>{sc.t}</div>
+                <div style={{ fontSize: 11, letterSpacing: ".07em", textTransform: "uppercase", color: C.sub, marginBottom: 3 }}>{sc.lbl}</div>
                 <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 19, fontWeight: 700, marginBottom: 10, fontVariantNumeric: "tabular-nums" }}>
-                  {rm(sc.v)}<span style={{ fontSize: 12, color: C.sub, fontWeight: 400 }}> / lead</span>
+                  {rm(sc.v)}<span style={{ fontSize: 12, color: C.sub, fontWeight: 400 }}>{t("perLead")}</span>
                 </div>
                 {(goal
-                  ? [["需要预算", rm(p.budget)], ["每周", rm(p.budget / WEEKS)], ["需要 Lead", int(p.leads)]]
-                  : [["拿到 Lead", int(p.leads)], ["New Lead Sales", rm(p.newSales)], ["ROAS", p.roas ? p.roas.toFixed(1) + "×" : "—"]]
+                  ? [[t("rowNeedBudget"), rm(p.budget)], [t("rowPerWeek"), rm(p.budget / WEEKS)], [t("rowNeedLead"), int(p.leads)]]
+                  : [[t("rowGotLead"), int(p.leads)], [t("rowNLS"), rm(p.newSales)], [t("rowRoas"), p.roas ? p.roas.toFixed(1) + "×" : "—"]]
                 ).map(([k, v], i) => (
                   <div key={k} style={{
                     display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12.5,
@@ -695,10 +728,9 @@ function Page1({ S, setV, mode, setMode, P, N }) {
         </div>
         {N.cplActual && (
           <p style={{ fontSize: 12.5, color: C.sub, margin: "10px 0 0", lineHeight: 1.6 }}>
-            你这个月实际跑在 <b style={{ color: C.ink, fontFamily: "ui-monospace, monospace" }}>{rm(N.cplActual, 2)} / lead</b>。
-            {goal
-              ? <> 按这个成本要做到上面的 Sales 目标，需要 <b style={{ color: C.ink }}>{rm(planFor(S, N.cplActual, "goal").budget)}</b>，每周 <b style={{ color: C.ink }}>{rm(planFor(S, N.cplActual, "goal").budget / WEEKS)}</b>。</>
-              : <> 按这个成本，这笔预算只能买到 <b style={{ color: C.ink }}>{int(planFor(S, N.cplActual, "budget").leads)}</b> 个 lead，落到 <b style={{ color: C.ink }}>{rm(planFor(S, N.cplActual, "budget").newSales)}</b> New Lead Sales。</>}
+            <Rich s={goal
+              ? t("actualGoal", rm(N.cplActual, 2), rm(planFor(S, N.cplActual, "goal").budget), rm(planFor(S, N.cplActual, "goal").budget / WEEKS))
+              : t("actualBudget", rm(N.cplActual, 2), int(planFor(S, N.cplActual, "budget").leads), rm(planFor(S, N.cplActual, "budget").newSales))} />
           </p>
         )}
       </div>
@@ -707,7 +739,7 @@ function Page1({ S, setV, mode, setMode, P, N }) {
 }
 
 /* --------------------------------------------------------------- 第 2 页 */
-function Page2({ N, cur }) {
+function Page2({ N, cur, t }) {
   const rate = N.leads ? N.appt / N.leads : 0;
   const bmax = N.branchLead.length ? N.branchLead[0].leads : 1;
   const smax = N.branchSales.length ? N.branchSales[0].first : 1;
@@ -715,28 +747,28 @@ function Page2({ N, cur }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <p style={{ fontSize: 14, color: C.sub, margin: 0, maxWidth: "62ch", lineHeight: 1.6 }}>
-        本月到今天为止真的拿到几多。Lead / Appointment 来自 Lead Report，业绩来自逐日 Sales 上传。
+        {t("p2Intro")}
       </p>
 
       <StatRow>
-        <Stat label="本月 Lead" value={int(N.leads)} meta={N.lastDay ? `到 ${cur.split(" ")[0]} ${N.lastDay} 号` : "—"} />
-        <Stat label="本月 Appointment" value={int(N.appt)} meta="已约到的数量" />
-        <Stat label="约到率" value={pct(rate)} meta="Appointment ÷ Lead" />
-        <Stat label="每日平均 Lead" value={N.lastDay ? (N.leads / N.lastDay).toFixed(1) : "—"} meta="每日平均" />
+        <Stat label={t("sLead")} value={int(N.leads)} meta={N.lastDay ? t("mToDay", cur.split(" ")[0], N.lastDay) : "—"} />
+        <Stat label={t("sAppt")} value={int(N.appt)} meta={t("mBooked")} />
+        <Stat label={t("sRate")} value={pct(rate)} meta={t("mRateCalc")} />
+        <Stat label={t("sAvgDay")} value={N.lastDay ? (N.leads / N.lastDay).toFixed(1) : "—"} meta={t("mDailyAvg")} />
       </StatRow>
 
       <StatRow>
-        <Stat label="New Lead 业绩（First Course）" value={rm(N.newLeadSales)} accent={C.brown}
-          meta={N.salesDay ? `逐日 Sales 到 ${N.salesDay}`
-            : N.latestSalesDate ? `本月未上传 · 表里最新到 ${N.latestSalesDate}` : "等上传"} />
-        <Stat label="广告花费" value={rm(N.spend)} meta="含 6% SST" />
-        <Stat label="实际 CPL" value={rm(N.cplActual, 2)} meta="花费 ÷ Lead Report 的 Lead" />
-        <Stat label="实际 ROAS" value={N.roasActual ? N.roasActual.toFixed(1) + "×" : "—"} accent={C.brown}
-          meta="New Lead 业绩 ÷ 花费" />
+        <Stat label={t("sNLS")} value={rm(N.newLeadSales)} accent={C.brown}
+          meta={N.salesDay ? t("mSalesTo", N.salesDay)
+            : N.latestSalesDate ? t("mSalesGap", N.latestSalesDate) : t("mSalesWait")} />
+        <Stat label={t("sSpend")} value={rm(N.spend)} meta={t("mSST")} />
+        <Stat label={t("sCPL")} value={rm(N.cplActual, 2)} meta={t("mCPL")} />
+        <Stat label={t("sROAS")} value={N.roasActual ? N.roasActual.toFixed(1) + "×" : "—"} accent={C.brown}
+          meta={t("mROAS")} />
       </StatRow>
 
       <div>
-        <Blk note="来自 Lead Report">每日 Lead</Blk>
+        <Blk note={t("noteLeadReport")}>{t("blkDaily")}</Blk>
         <Card>
           {N.days.length ? (
             <div style={{ width: "100%", height: 210 }}>
@@ -754,16 +786,16 @@ function Page2({ N, cur }) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          ) : <div style={{ padding: 24, textAlign: "center", color: C.sub, fontSize: 13.5 }}>本月还没有每日 Lead 数据。</div>}
+          ) : <div style={{ padding: 24, textAlign: "center", color: C.sub, fontSize: 13.5 }}>{t("emptyDaily")}</div>}
         </Card>
       </div>
 
       <div>
-        <Blk note="Lead → Appointment">分店 Lead 拆解</Blk>
+        <Blk note="Lead → Appointment">{t("blkBranchLead")}</Blk>
         <Card>
           <div style={{ overflowX: "auto" }}>
             <Table
-              head={["分店", "Lead 量", "Lead", "Appt", "约到率"]}
+              head={[t("thBranch"), t("thLeadVol"), t("thLead"), t("thAppt"), t("thApptRate")]}
               rows={N.branchLead.map((b) => {
                 const r = b.leads ? b.appt / b.leads : 0;
                 return [
@@ -773,22 +805,22 @@ function Page2({ N, cur }) {
                   <span key="r" style={{ color: r < 0.3 ? CRIT : r < 0.5 ? WARN : C.ink, fontWeight: r < 0.3 ? 700 : 400 }}>{pct(r)}</span>,
                 ];
               })}
-              foot={["全部 " + N.branchLead.length + " 间", "", int(N.leads), int(N.appt), pct(rate)]}
+              foot={[t("footAll", N.branchLead.length), "", int(N.leads), int(N.appt), pct(rate)]}
             />
           </div>
           <p style={{ fontSize: 12, color: C.sub, margin: "9px 0 0", lineHeight: 1.55 }}>
-            约到率低过 30% 标红 —— lead 已经买回来但约不到人，问题在跟进不在广告。
+            {t("noteWeak")}
           </p>
         </Card>
       </div>
 
       <div>
-        <Blk note={N.salesDay ? `逐日 Sales 到 ${N.salesDay}` : ""}>分店业绩拆解</Blk>
+        <Blk note={N.salesDay ? t("mSalesTo", N.salesDay) : ""}>{t("blkBranchSales")}</Blk>
         <Card>
           {N.branchSales.length ? (
             <div style={{ overflowX: "auto" }}>
               <Table
-                head={["分店", "New Lead 业绩", "业绩", "成交", "客单价", "MTD 总收"]}
+                head={[t("thBranch"), t("thNLS"), t("thSalesVal"), t("thEnrol"), t("thAOV"), t("thMTD")]}
                 rows={N.branchSales.map((b) => [
                   b.branch,
                   <Bar100 key="b" w={(b.first / smax) * 100} color={C.brown} />,
@@ -797,16 +829,16 @@ function Page2({ N, cur }) {
                   rm(b.mtd),
                 ])}
                 foot={[
-                  "全部 " + N.branchSales.length + " 间", "",
+                  t("footAll", N.branchSales.length), "",
                   rm(N.newLeadSales), int(N.enrol),
                   N.avgValue ? rm(N.avgValue) : "—",
                   rm(N.mo ? N.mo.actual : null),
                 ]}
               />
             </div>
-          ) : <div style={{ padding: 24, textAlign: "center", color: C.sub, fontSize: 13.5 }}>本月还没有逐日 Sales 上传。</div>}
+          ) : <div style={{ padding: 24, textAlign: "center", color: C.sub, fontSize: 13.5 }}>{t("emptyBranchSales")}</div>}
           <p style={{ fontSize: 12, color: C.sub, margin: "9px 0 0", lineHeight: 1.55 }}>
-            New Lead 业绩 = First Course（新客第一个疗程），客单价 = 业绩 ÷ 成交数。
+            {t("noteNLSdef")}
           </p>
         </Card>
       </div>
@@ -815,54 +847,52 @@ function Page2({ N, cur }) {
 }
 
 /* --------------------------------------------------------------- 第 3 页 */
-function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
+function Page3({ S, P, N, prog, cur, history, goal, daysInMonth, t }) {
   const sev = prog && prog.projRate != null
     ? (prog.projRate >= 0.95 ? "good" : prog.projRate >= 0.8 ? "warn" : "crit")
     : null;
   const stripe = sev === "good" ? GOOD : sev === "warn" ? WARN : sev === "crit" ? CRIT : C.sub;
 
   const rows = [
-    ["Lead", P.leads, N.leads, int, "整月目标"],
-    ["Appointment", P.appt, N.appt, int, "整月目标"],
-    ["Enroll 成交", P.enroll, N.enrol, int, "实际来自逐日 Sales"],
-    ["New Lead 业绩", P.newSales, N.newLeadSales, (v) => rm(v), "First Course"],
-    ["广告预算", P.budget, N.spend, (v) => rm(v), "已花"],
+    [t("rLead"), P.leads, N.leads, int, t("nFullMonth")],
+    [t("rAppt"), P.appt, N.appt, int, t("nFullMonth")],
+    [t("rEnroll"), P.enroll, N.enrol, int, t("nFromDaily")],
+    [t("rNLS"), P.newSales, N.newLeadSales, (v) => rm(v), t("nFirstCourse")],
+    [t("rBudget"), P.budget, N.spend, (v) => rm(v), t("nSpent")],
   ];
 
   const alerts = [];
   if (prog) {
-    if (prog.paceRate < 0.85) alerts.push(["crit", "进度落后",
-      `到今天应该有 ${int(prog.paceTarget)} 个 lead，实际 ${int(N.leads)} 个，只到 ${pct(prog.paceRate)}。`,
+    if (prog.paceRate < 0.85) alerts.push(["crit", t("aBehindT"),
+      t("aBehindB", int(prog.paceTarget), int(N.leads), pct(prog.paceRate)),
       prog.remaining > 0
-        ? `剩 ${prog.remaining} 天要补 ${int(prog.need)} 个，等于每天 ${(prog.need / prog.remaining).toFixed(1)} 个 — 现在每天才 ${(N.leads / prog.elapsed).toFixed(1)} 个。`
-        : "本月已结束，把差距带进下个月的目标。"]);
-    else if (prog.paceRate < 1) alerts.push(["warn", "进度略慢",
-      `到今天应有 ${int(prog.paceTarget)} 个，实际 ${int(N.leads)} 个（${pct(prog.paceRate)}）。`,
-      "还追得上，维持现有投放，盯紧未来三天。"]);
-    else alerts.push(["good", "进度领先",
-      `到今天应有 ${int(prog.paceTarget)} 个，实际 ${int(N.leads)} 个（${pct(prog.paceRate)}）。`, "维持现状即可。"]);
+        ? t("aBehindA", prog.remaining, int(prog.need), (prog.need / prog.remaining).toFixed(1), (N.leads / prog.elapsed).toFixed(1))
+        : t("aBehindAEnd")]);
+    else if (prog.paceRate < 1) alerts.push(["warn", t("aSlowT"),
+      t("aSlowB", int(prog.paceTarget), int(N.leads), pct(prog.paceRate)), t("aSlowA")]);
+    else alerts.push(["good", t("aAheadT"),
+      t("aSlowB", int(prog.paceTarget), int(N.leads), pct(prog.paceRate)), t("aAheadA")]);
   }
   if (N.cplActual) {
     const over = N.cplActual / S.cpl - 1;
-    if (over > 0.2) alerts.push(["crit", "CPL 严重超标",
-      `实际 ${rm(N.cplActual, 2)}，比目标 ${rm(S.cpl)} 贵 ${pct(over)}。同样的钱只买到目标数量的 ${pct(1 / (1 + over))}。`,
-      "先砍掉最贵的广告组。现在加预算只会按这个价买更多贵 lead。"]);
-    else if (over > 0) alerts.push(["warn", "CPL 偏高",
-      `实际 ${rm(N.cplActual, 2)}，比目标 ${rm(S.cpl)} 贵 ${pct(over)}。`, "盯住表现最差的广告组，暂时不用动整体预算。"]);
-    else alerts.push(["good", "CPL 达标",
-      `实际 ${rm(N.cplActual, 2)}，比目标 ${rm(S.cpl)} 平 ${pct(-over)}。`,
-      "这是加预算的窗口 — 成本在目标内，放量的边际回报最好。"]);
+    if (over > 0.2) alerts.push(["crit", t("aCplBadT"),
+      t("aCplBadB", rm(N.cplActual, 2), rm(S.cpl), pct(over), pct(1 / (1 + over))), t("aCplBadA")]);
+    else if (over > 0) alerts.push(["warn", t("aCplHiT"),
+      t("aCplHiB", rm(N.cplActual, 2), rm(S.cpl), pct(over)), t("aCplHiA")]);
+    else alerts.push(["good", t("aCplOkT"),
+      t("aCplOkB", rm(N.cplActual, 2), rm(S.cpl), pct(-over)), t("aCplOkA")]);
   }
   if (N.roasActual && P.roas) {
     const r = N.roasActual / P.roas;
-    if (r < 0.8) alerts.push(["crit", "ROAS 低过目标",
-      `实际 ${N.roasActual.toFixed(1)}× vs 目标 ${P.roas.toFixed(1)}×，只到 ${pct(r)}。`,
-      "不是广告太贵就是客单价／成交率低过假设 — 先看第 2 页的实际客单价。"]);
+    if (r < 0.8) alerts.push(["crit", t("aRoasT"),
+      t("aRoasB", N.roasActual.toFixed(1) + "×", P.roas.toFixed(1) + "×", pct(r)), t("aRoasA")]);
   }
   const weak = N.branchLead.filter((b) => b.leads >= 10 && b.appt / b.leads < 0.3);
-  if (weak.length) alerts.push(["crit", "分店约不到人",
-    weak.slice(0, 3).map((b) => `${b.branch}（${pct(b.appt / b.leads)}）`).join("、") + (weak.length > 3 ? ` 等 ${weak.length} 间` : "") + " 的约到率低过 30%。",
-    "Lead 已经买回来了，卡在跟进这一关 — 查这几间的回复速度同话术，比加广告预算划算得多。"]);
+  if (weak.length) alerts.push(["crit", t("aWeakT"),
+    t("aWeakB",
+      weak.slice(0, 3).map((b) => `${b.branch} (${pct(b.appt / b.leads)})`).join(", "),
+      weak.length > 3 ? t("aWeakMore", weak.length) : ""),
+    t("aWeakA")]);
   const order = { crit: 0, warn: 1, good: 2 };
   alerts.sort((a, b) => order[a[0]] - order[b[0]]);
 
@@ -881,38 +911,36 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
             background: sev === "good" ? "#EAF0E4" : sev === "warn" ? "#F7EDD9" : sev === "crit" ? "#F5E3DA" : C.sand,
             color: stripe,
           }}>
-            {sev === "good" ? "在轨道上" : sev === "warn" ? "偏离目标" : sev === "crit" ? "严重落后" : "等数据"}
+            {sev === "good" ? t("vGood") : sev === "warn" ? t("vWarn") : sev === "crit" ? t("vCrit") : t("vWait")}
           </div>
           {prog ? (
             <>
               <p style={{ fontSize: 17, lineHeight: 1.45, margin: 0, textWrap: "balance" }}>
-                照现在每日 <b style={{ fontFamily: "ui-monospace, monospace" }}>{(N.leads / prog.elapsed).toFixed(1)}</b> 个 lead 的速度，
-                月底会拿到 <b style={{ fontFamily: "ui-monospace, monospace" }}>{int(prog.proj)}</b> 个，
-                {P.leads - prog.proj > 0
-                  ? <>差目标 <b style={{ fontFamily: "ui-monospace, monospace" }}>{int(P.leads - prog.proj)}</b> 个。</>
-                  : <>比目标多 <b style={{ fontFamily: "ui-monospace, monospace" }}>{int(prog.proj - P.leads)}</b> 个。</>}
+                <Rich s={P.leads - prog.proj > 0
+                  ? t("verdictShort", (N.leads / prog.elapsed).toFixed(1), int(prog.proj), int(P.leads - prog.proj))
+                  : t("verdictOver", (N.leads / prog.elapsed).toFixed(1), int(prog.proj), int(prog.proj - P.leads))} />
               </p>
               <p style={{ margin: "8px 0 0", fontSize: 13.5, color: C.sub }}>
                 {[
                   prog.remaining > 0 && prog.need > 0
-                    ? `剩 ${prog.remaining} 天要补 ${int(prog.need)} 个，等于每天 ${(prog.need / prog.remaining).toFixed(1)} 个`
-                    : prog.remaining === 0 ? "本月已跑完" : null,
+                    ? t("subCatchUp", prog.remaining, int(prog.need), (prog.need / prog.remaining).toFixed(1))
+                    : prog.remaining === 0 ? t("subMonthDone") : null,
                   prog.remaining > 0 && prog.need > 0 && N.cplActual
-                    ? `按实际 CPL ${rm(N.cplActual, 2)} 算，每天要花 ${rm((prog.need * N.cplActual) / prog.remaining)}`
+                    ? t("subSpendDay", rm(N.cplActual, 2), rm((prog.need * N.cplActual) / prog.remaining))
                     : null,
                 ].filter(Boolean).join(" · ")}
               </p>
             </>
-          ) : <p style={{ fontSize: 15, margin: 0, color: C.sub }}>本月还没有每日 Lead 数据。</p>}
+          ) : <p style={{ fontSize: 15, margin: 0, color: C.sub }}>{t("verdictNoData")}</p>}
         </div>
       </div>
 
       <div>
-        <Blk note={`Lead / Appointment 到 ${cur.split(" ")[0]} ${N.lastDay} 号`}>目标 vs 现在</Blk>
+        <Blk note={t("cmpNote", cur.split(" ")[0], N.lastDay)}>{t("cmpTitle")}</Blk>
         <Card>
           <div style={{ overflowX: "auto" }}>
             <Table
-              head={["指标", "目标", "现在", "差距"]}
+              head={[t("thMetric"), t("thTarget"), t("thNow"), t("thGap")]}
               align="right"
               rows={[
                 ...rows.map(([label, t, n, f, note]) => {
@@ -927,13 +955,13 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
                   ];
                 }),
                 ...(N.cplActual ? [[
-                  "Cost Per Lead", rm(S.cpl), rm(N.cplActual, 2),
+                  t("rCPL"), rm(S.cpl), rm(N.cplActual, 2),
                   <Pill key="p" tone={N.cplActual <= S.cpl ? "good" : N.cplActual <= S.cpl * 1.2 ? "warn" : "crit"}>
                     {(N.cplActual >= S.cpl ? "+" : "−") + pct(Math.abs(N.cplActual / S.cpl - 1))}
                   </Pill>,
                 ]] : []),
                 ...(N.roasActual && P.roas ? [[
-                  "ROAS", P.roas.toFixed(1) + "×", N.roasActual.toFixed(1) + "×",
+                  t("rROAS"), P.roas.toFixed(1) + "×", N.roasActual.toFixed(1) + "×",
                   <Pill key="p" tone={N.roasActual >= P.roas ? "good" : N.roasActual >= P.roas * 0.8 ? "warn" : "crit"}>
                     {(N.roasActual >= P.roas ? "+" : "−") + pct(Math.abs(N.roasActual / P.roas - 1))}
                   </Pill>,
@@ -946,7 +974,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
 
       {prog && (
         <div>
-          <Blk note="累积 Lead vs 达标应有的速度">进度追踪</Blk>
+          <Blk note={t("progNote")}>{t("progTitle")}</Blk>
           <Card>
             <div style={{ width: "100%", height: 250 }}>
               <ResponsiveContainer>
@@ -957,18 +985,18 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
                   <Tooltip
                     contentStyle={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 10, fontSize: 12.5 }}
                     labelFormatter={(d) => `${cur.split(" ")[0]} ${d}`}
-                    formatter={(v, k) => [int(v), k === "cum" ? "累积实际" : "达标节奏"]} />
+                    formatter={(v, k) => [int(v), k === "cum" ? t("tipCum") : t("tipPace")]} />
                   <ReferenceLine y={P.leads} stroke={C.clay} strokeDasharray="6 5"
-                    label={{ value: `目标 ${int(P.leads)}`, position: "insideTopRight", fill: C.clay, fontSize: 11 }} />
+                    label={{ value: t("refTarget", int(P.leads)), position: "insideTopRight", fill: C.clay, fontSize: 11 }} />
                   <Line type="monotone" dataKey="pace" stroke={C.sub} strokeWidth={2} strokeDasharray="6 5" dot={false} name="pace" />
                   <Line type="monotone" dataKey="cum" stroke={C.brown} strokeWidth={2.5} dot={false} name="cum" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
             <div style={{ display: "flex", gap: 15, flexWrap: "wrap", fontSize: 12.5, color: C.sub, marginTop: 8 }}>
-              <span><i style={{ display: "inline-block", width: 15, height: 3, borderRadius: 2, background: C.brown, marginRight: 6, verticalAlign: "middle" }} />累积实际 Lead</span>
-              <span><i style={{ display: "inline-block", width: 15, borderTop: `2px dashed ${C.sub}`, marginRight: 6, verticalAlign: "middle" }} />达标节奏线</span>
-              <span><i style={{ display: "inline-block", width: 15, borderTop: `2px dashed ${C.clay}`, marginRight: 6, verticalAlign: "middle" }} />整月目标 {int(P.leads)}</span>
+              <span><i style={{ display: "inline-block", width: 15, height: 3, borderRadius: 2, background: C.brown, marginRight: 6, verticalAlign: "middle" }} />{t("legCum")}</span>
+              <span><i style={{ display: "inline-block", width: 15, borderTop: `2px dashed ${C.sub}`, marginRight: 6, verticalAlign: "middle" }} />{t("legPace")}</span>
+              <span><i style={{ display: "inline-block", width: 15, borderTop: `2px dashed ${C.clay}`, marginRight: 6, verticalAlign: "middle" }} />{t("legTarget", int(P.leads))}</span>
             </div>
           </Card>
         </div>
@@ -976,7 +1004,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
 
       {alerts.length > 0 && (
         <div>
-          <Blk note="按严重程度排序">预警</Blk>
+          <Blk note={t("alertsNote")}>{t("alertsTitle")}</Blk>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(268px,1fr))", gap: 12 }}>
             {alerts.map(([lv, title, body, action]) => {
               const col = lv === "crit" ? CRIT : lv === "warn" ? WARN : GOOD;
@@ -994,7 +1022,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
                     {title}
                   </div>
                   <p style={{ margin: 0, fontSize: 13, color: C.sub, lineHeight: 1.5 }}>{body}</p>
-                  <div style={{ marginTop: 7, fontSize: 13 }}><b>建议</b> · {action}</div>
+                  <div style={{ marginTop: 7, fontSize: 13 }}><b>{t("advice")}</b> · {action}</div>
                 </div>
               );
             })}
@@ -1005,7 +1033,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
       {history.length > 1 && (
         <>
           <div>
-            <Blk note="First Course">历史月份 New Lead 业绩</Blk>
+            <Blk note={t("nFirstCourse")}>{t("histTitle")}</Blk>
             <Card>
               <div style={{ width: "100%", height: 220 }}>
                 <ResponsiveContainer>
@@ -1016,7 +1044,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
                       tickFormatter={(v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1000) + "K")} />
                     <Tooltip
                       contentStyle={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 10, fontSize: 12.5 }}
-                      formatter={(v) => [rm(v), "New Lead 业绩"]} />
+                      formatter={(v) => [rm(v), t("thNLS")]} />
                     <Bar dataKey="newLead" fill={C.brown} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1025,7 +1053,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
           </div>
 
           <div>
-            <Blk note="New Lead 业绩 ÷ 广告花费">实际 ROAS 追踪</Blk>
+            <Blk note={t("roasNote")}>{t("roasTitle")}</Blk>
             <Card>
               <div style={{ width: "100%", height: 200 }}>
                 <ResponsiveContainer>
@@ -1039,7 +1067,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
                       formatter={(v) => [v.toFixed(1) + "×", "ROAS"]} />
                     {P.roas && (
                       <ReferenceLine y={P.roas} stroke={C.clay} strokeDasharray="6 5"
-                        label={{ value: `目标 ${P.roas.toFixed(1)}×`, position: "insideTopRight", fill: C.clay, fontSize: 11 }} />
+                        label={{ value: t("refTarget", P.roas.toFixed(1) + "×"), position: "insideTopRight", fill: C.clay, fontSize: 11 }} />
                     )}
                     <Line type="monotone" dataKey="roas" stroke={C.sage} strokeWidth={2.5} dot={{ r: 3, fill: C.sage }} />
                   </LineChart>
@@ -1047,7 +1075,7 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
               </div>
               <div style={{ overflowX: "auto", marginTop: 12 }}>
                 <Table
-                  head={["月份", "New Lead 业绩", "广告花费", "ROAS"]}
+                  head={[t("thMonth"), t("thNLS"), t("thSpend"), t("rROAS")]}
                   align="right"
                   rows={history.slice().reverse().map((h) => [
                     h.m, rm(h.newLead), rm(h.spend),
@@ -1061,10 +1089,10 @@ function Page3({ S, P, N, prog, cur, history, goal, daysInMonth }) {
       )}
 
       <footer style={{ fontSize: 12, color: C.sub, lineHeight: 1.65, borderTop: `1px solid ${C.line}`, paddingTop: 16 }}>
-        <b>Lead / Appointment</b> · 「2026 目标与现状表」的 Lead Report 分页，逐店逐日加总。<br />
-        <b>New Lead 业绩 · 成交 · 客单价</b> · 逐日 Sales 上传的 First Course / Enrolment（每月取最后一天的 MTD）。<br />
-        <b>广告花费</b> · Ads Report 月度分页，含 6% SST。<br />
-        <b>目标</b> · 第 1 页的拉杆，只存在你的浏览器，不会写回任何表。
+        <Rich s={t("foot1")} /><br />
+        <Rich s={t("foot2")} /><br />
+        <Rich s={t("foot3")} /><br />
+        <Rich s={t("foot4")} />
       </footer>
     </div>
   );
