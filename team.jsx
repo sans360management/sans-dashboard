@@ -33,6 +33,23 @@ const int = (n) => (n == null || !isFinite(n) ? "—" : Math.round(n).toLocaleSt
 const pct = (n, dp = 0) => (n == null || !isFinite(n) ? "—" : (n * 100).toFixed(dp) + "%");
 const monthKey = (d) => MON[d.getMonth()] + " " + String(d.getFullYear()).slice(2);
 
+// dailySales 的 date 不一定是 ISO —— 也会是 "Jun 11 2026" 这种。照 dashboard.jsx:310
+// 的 normDate 先正规化，再用字串取月份键，不要 new Date() 去 parse：
+// 格式一不对就 NaN，整批逐日 Sales 会被静静丢掉（业绩同 ROAS 就变空）。
+const MNUM = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+function normDate(s) {
+  s = String(s);
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  m = s.match(/\b([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{4})/);
+  if (m && MNUM[m[1]]) return m[3] + "-" + String(MNUM[m[1]]).padStart(2, "0") + "-" + String(+m[2]).padStart(2, "0");
+  return s;
+}
+const monthKeyFromISO = (iso) => {
+  const p = String(iso).split("-");
+  return p.length >= 2 ? MON[+p[1] - 1] + " " + String(p[0]).slice(2) : null;
+};
+
 /* --------------------------------------------------------------- 小组件 */
 function Card({ children, style }) {
   return (
@@ -146,10 +163,10 @@ function buildMonthly(d) {
 
   const latest = {};
   (d.dailySales || []).forEach((x) => {
-    const dt = new Date(x.date + "T00:00:00");
-    if (isNaN(dt)) return;
-    const m = monthKey(dt);
-    if (!latest[m] || String(x.date) > latest[m].date) latest[m] = { date: String(x.date), x };
+    const date = normDate(x.date);
+    const m = monthKeyFromISO(date);
+    if (!m || !MON.includes(m.split(" ")[0])) return;
+    if (!latest[m] || date > latest[m].date) latest[m] = { date, x };
   });
   Object.keys(latest).forEach((m) => {
     const t = latest[m].x.total || {};
@@ -169,6 +186,13 @@ function buildMonthly(d) {
 function deriveNow(d, cur) {
   const monthly = buildMonthly(d);
   const mo = monthly[cur] || null;
+
+  // 本月没有逐日 Sales 时，讲清楚表里最新一天是几时 —— 比只写「等上传」有用得多
+  let latestSalesDate = null;
+  (d.dailySales || []).forEach((x) => {
+    const iso = normDate(x.date);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && (!latestSalesDate || iso > latestSalesDate)) latestSalesDate = iso;
+  });
 
   // Lead / Appointment —— 来自 Lead Report（branches[].m[cur]）
   let leads = 0, appt = 0, cancel = 0;
@@ -209,6 +233,7 @@ function deriveNow(d, cur) {
     roasActual: newLeadSales && spend ? newLeadSales / spend : null,
     branchSales: mo && mo.branches ? mo.branches.slice().sort((a, b) => b.first - a.first) : [],
     salesDay: mo ? mo.day : null,
+    latestSalesDate,
   };
 }
 
@@ -668,7 +693,8 @@ function Page2({ N, cur }) {
 
       <StatRow>
         <Stat label="New Lead 业绩（First Course）" value={rm(N.newLeadSales)} accent={C.brown}
-          meta={N.salesDay ? `逐日 Sales 到 ${N.salesDay}` : "等上传"} />
+          meta={N.salesDay ? `逐日 Sales 到 ${N.salesDay}`
+            : N.latestSalesDate ? `本月未上传 · 表里最新到 ${N.latestSalesDate}` : "等上传"} />
         <Stat label="广告花费" value={rm(N.spend)} meta="含 6% SST" />
         <Stat label="实际 CPL" value={rm(N.cplActual, 2)} meta="花费 ÷ Lead Report 的 Lead" />
         <Stat label="实际 ROAS" value={N.roasActual ? N.roasActual.toFixed(1) + "×" : "—"} accent={C.brown}
