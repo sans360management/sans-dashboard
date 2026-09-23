@@ -102,7 +102,20 @@ function Pill({ tone, children }) {
     }}>{children}</span>
   );
 }
-function Slider({ id, label, out, min, max, step, value, onChange, ends }) {
+// 数字本身就是输入格 —— 拉杆调大概，打字调精确。`value` 一律是拉杆单位
+// (金额用实数，百分比用 5–100)，所以格式化/解析只需要看 kind。
+function Slider({ id, label, kind = "money", min, max, step, value, onChange, ends }) {
+  const fmt = (v) => (kind === "pct" ? Math.round(v) + "%" : rm(v));
+  const [draft, setDraft] = useState(null); // null = 不在编辑，显示格式化后的值
+
+  const commit = (raw) => {
+    setDraft(null);
+    const cleaned = String(raw).replace(/[^\d.-]/g, "");
+    const v = parseFloat(cleaned);
+    if (!isFinite(v)) return;            // 打了乱七八糟的东西就还原，不要变 NaN
+    onChange(Math.min(max, Math.max(min, v)));
+  };
+
   return (
     <div>
       <label htmlFor={id} style={{
@@ -110,10 +123,24 @@ function Slider({ id, label, out, min, max, step, value, onChange, ends }) {
         gap: 10, fontSize: 13, color: C.ink, marginBottom: 7,
       }}>
         <span>{label}</span>
-        <output style={{
-          fontFamily: "ui-monospace, monospace", fontSize: 15, fontWeight: 700,
-          color: C.brown, fontVariantNumeric: "tabular-nums",
-        }}>{out}</output>
+        <input
+          type="text" inputMode="decimal" aria-label={label + "（可直接输入）"}
+          value={draft != null ? draft : fmt(value)}
+          onChange={(e) => setDraft(e.target.value)}
+          onFocus={(e) => { setDraft(String(value)); requestAnimationFrame(() => e.target.select()); }}
+          onBlur={(e) => commit(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") { setDraft(null); e.currentTarget.blur(); }
+          }}
+          style={{
+            fontFamily: "ui-monospace, monospace", fontSize: 15, fontWeight: 700,
+            color: C.brown, fontVariantNumeric: "tabular-nums", textAlign: "right",
+            width: "9ch", padding: "2px 6px", background: draft != null ? "#fff" : "transparent",
+            border: `1px solid ${draft != null ? C.brown : "transparent"}`,
+            borderBottom: `1px dashed ${draft != null ? C.brown : C.line}`,
+            borderRadius: 5, outline: "none", cursor: "text", minWidth: 0,
+          }} />
       </label>
       <input id={id} type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(+e.target.value)}
@@ -530,30 +557,30 @@ function Page1({ S, setV, mode, setMode, P, N }) {
         {goal ? (
           <>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-sales" label="这个月 Sales 目标" out={rm(S.sales)} min={500000} max={10000000} step={100000}
+              <Slider id="s-sales" label="这个月 Sales 目标" kind="money" min={500000} max={10000000} step={100000}
                 value={S.sales} onChange={setV("sales")} ends={["RM0.5M", "RM10M"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-newpct" label="New Lead Sales 占几多 %" out={pct(S.newPct)} min={5} max={100} step={1}
+              <Slider id="s-newpct" label="New Lead Sales 占几多 %" kind="pct" min={5} max={100} step={1}
                 value={Math.round(S.newPct * 100)} onChange={(v) => setV("newPct")(v / 100)} ends={["5%", "100%"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-cpl" label="Cost Per Lead 预算" out={rm(S.cpl)} min={10} max={300} step={5}
+              <Slider id="s-cpl" label="Cost Per Lead 预算" kind="money" min={10} max={300} step={5}
                 value={S.cpl} onChange={setV("cpl")} ends={["RM10", "RM300"]} />
             </div>
           </>
         ) : (
           <>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-budget" label="这个月广告费打算花几多" out={rm(S.budget)} min={5000} max={400000} step={1000}
+              <Slider id="s-budget" label="这个月广告费打算花几多" kind="money" min={5000} max={400000} step={1000}
                 value={S.budget} onChange={setV("budget")} ends={["RM5K", "RM400K"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-cpl2" label="Cost Per Lead 估几多" out={rm(S.cpl)} min={10} max={300} step={5}
+              <Slider id="s-cpl2" label="Cost Per Lead 估几多" kind="money" min={10} max={300} step={5}
                 value={S.cpl} onChange={setV("cpl")} ends={["RM10", "RM300"]} />
             </div>
             <div style={{ background: "#fff", padding: "15px 16px 17px" }}>
-              <Slider id="s-value2" label="平均客单价" out={rm(S.value)} min={500} max={12000} step={100}
+              <Slider id="s-value2" label="平均客单价" kind="money" min={500} max={12000} step={100}
                 value={S.value} onChange={setV("value")} ends={["RM500", "RM12K"]} />
             </div>
           </>
@@ -568,13 +595,13 @@ function Page1({ S, setV, mode, setMode, P, N }) {
           padding: "2px 16px 18px", display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 18,
         }}>
-          <Slider id="s-value" label="平均客单价" out={rm(S.value)} min={500} max={12000} step={100}
+          <Slider id="s-value" label="平均客单价" kind="money" min={500} max={12000} step={100}
             value={S.value} onChange={setV("value")} />
-          <Slider id="s-r1" label="Lead → Appt" out={pct(S.r1)} min={5} max={100} step={1}
+          <Slider id="s-r1" label="Lead → Appt" kind="pct" min={5} max={100} step={1}
             value={Math.round(S.r1 * 100)} onChange={(v) => setV("r1")(v / 100)} />
-          <Slider id="s-r2" label="Appt → Show Up" out={pct(S.r2)} min={5} max={100} step={1}
+          <Slider id="s-r2" label="Appt → Show Up" kind="pct" min={5} max={100} step={1}
             value={Math.round(S.r2 * 100)} onChange={(v) => setV("r2")(v / 100)} />
-          <Slider id="s-r3" label="Show Up → Enroll" out={pct(S.r3)} min={5} max={100} step={1}
+          <Slider id="s-r3" label="Show Up → Enroll" kind="pct" min={5} max={100} step={1}
             value={Math.round(S.r3 * 100)} onChange={(v) => setV("r3")(v / 100)} />
         </div>
       </details>
