@@ -94,7 +94,7 @@ export default function CsApp() {
       <header style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${C.line}`, background: "#fff" }}>
         <div>
           <div style={{ fontWeight: 700, color: C.brown, fontSize: 16 }}>Sans 客服助手</div>
-          <div style={{ fontSize: 12, color: C.sub }}>查 GHL 顾客状态 · 只能查看，不会发信息给顾客</div>
+          <div style={{ fontSize: 12, color: C.sub }}>查顾客状态 · 只能查看，不会发信息给顾客</div>
         </div>
         {chat.length > 0 && (
           <button onClick={() => { setChat([]); setErr(""); }} disabled={busy}
@@ -128,7 +128,7 @@ export default function CsApp() {
               {m.role === "assistant" && <Copy text={m.text} />}
             </div>
           ))}
-          {busy && <div style={{ color: C.sub, fontSize: 13 }}>正在查 GHL…（约 10–40 秒）</div>}
+          {busy && <div style={{ color: C.sub, fontSize: 13 }}>正在查询…（约 10–40 秒）</div>}
           {err && <div style={{ color: C.clay, fontSize: 13 }}>{err}</div>}
           <div ref={endRef} />
         </div>
