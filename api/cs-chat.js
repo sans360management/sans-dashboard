@@ -11,7 +11,7 @@ export const config = { maxDuration: 60 };
 const TOOLS = [
   {
     name: "list_conversations",
-    description: "列出 GHL 对话（最新在前）。filter：need_reply=顾客最后发信息、我们还没回；need_followup=我们最后发信息、顾客还没回；unread=未读；all=全部。可用 min_hours（至少多久没动）/ max_hours（只看最近多久内）/ tag（tag 包含这个字）筛选。返回每个对话的状态、最后信息、tags、pipeline 阶段、conversationId、contactId。",
+    description: "列出顾客对话（最新在前）。filter：need_reply=顾客最后发信息、我们还没回；need_followup=我们最后发信息、顾客还没回；unread=未读；all=全部。可用 min_hours（至少多久没动）/ max_hours（只看最近多久内）/ tag（tag 包含这个字）筛选。返回每个对话的状态、最后信息、tags、pipeline 阶段、conversationId、contactId。",
     input_schema: {
       type: "object",
       properties: {
@@ -52,7 +52,7 @@ const RUN = {
   get_contact: getContact,
 };
 
-const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，主打 RM199 NeckFix 体验，靠 Meta 广告 + WhatsApp 获客，再约到门店）的客服助手。客服会问你关于 Lead 的状态、哪些顾客要回复或跟进。你用工具去 GHL（GoHighLevel）查真实数据。
+const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，主打 RM199 NeckFix 体验，靠 Meta 广告 + WhatsApp 获客，再约到门店）的客服助手。客服会问你关于 Lead 的状态、哪些顾客要回复或跟进。你用工具去公司的客户系统查真实数据。
 
 状态怎么看：同时看 pipeline 阶段 和 tags。
 - "需要回复" = 顾客最后发信息，我们还没回（list_conversations filter=need_reply）。
@@ -64,7 +64,8 @@ const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，主打 
 - 列"需要回复"时，把只回"收到/OK/谢谢/👍"之类不需要再回的，和真正在问问题、要预约的分开；真正要回的放前面。
 - 被问到某个顾客时，先 find_contact，再按需要 get_conversation / get_contact，说清楚：现在在哪个阶段、最后谁说了什么、下一步建议怎么回（可以给一段可直接复制的回复草稿，语言跟顾客一样）。
 - 发送失败的信息（⚠️发送失败）要特别提醒。
-- 绝不编造：查不到就说查不到。你只能查看，不能替客服发信息或改 GHL —— 被要求时就说明要到 GHL 里操作。`;
+- 绝不编造：查不到就说查不到。你只能查看，不能替客服发信息或改资料 —— 被要求时就说明要到系统里操作。
+- 用词：一律把这个客户系统叫「系统」。绝对不要说出系统的品牌或产品名称（例如 GHL、GoHighLevel、HighLevel、LeadConnector），回复草稿里也不要。`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
   const key = process.env.CS_KEY;
   if (!key || body.k !== key) { res.status(401).json({ error: "链接无效或已更换，请向管理员索取新链接" }); return; }
   if (!process.env.ANTHROPIC_API_KEY) { res.status(500).json({ error: "AI 未配置：请在 Vercel 加环境变量 ANTHROPIC_API_KEY" }); return; }
-  if (!process.env.GHL_TOKEN || !process.env.GHL_LOCATION_ID) { res.status(500).json({ error: "GHL 未配置：请在 Vercel 加 GHL_TOKEN / GHL_LOCATION_ID" }); return; }
+  if (!process.env.GHL_TOKEN || !process.env.GHL_LOCATION_ID) { res.status(500).json({ error: "系统未配置，请联系管理员" }); return; }
 
   let messages = (Array.isArray(body.messages) ? body.messages : [])
     .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
