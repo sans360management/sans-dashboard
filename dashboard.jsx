@@ -943,6 +943,15 @@ function Dashboard({ dataVersion }) {
       sales: nl != null ? nl : null, roas: (nl && a.spend) ? +(nl / a.spend).toFixed(2) : null };
   });
 
+  // Monthly Ad Detail 的 TOTAL 行：金额/笔数直接加总；CPL、ROAS 用加权（不是各月平均）
+  const adsTotal = (() => {
+    const t = adsTrend.reduce((a, r) => ({
+      spend: a.spend + (r.spend || 0), msg: a.msg + (r.msg || 0),
+      leads: a.leads + (r.leads || 0), sales: a.sales + (r.sales || 0),
+    }), { spend: 0, msg: 0, leads: 0, sales: 0 });
+    return { ...t, cpl: t.leads ? t.spend / t.leads : null, roas: t.spend ? t.sales / t.spend : null };
+  })();
+
   const metaTrend = META.map((x) => ({ ...x, name: x.m }));
   const metaT = useMemo(() => {
     const rows = META.filter((x) => adsActive.includes(x.m));
@@ -1227,6 +1236,17 @@ function Dashboard({ dataVersion }) {
                         <td className="py-2 px-2 text-right" style={{ color: r.roas ? (r.roas >= 8 ? C.sage : C.gold) : C.sub, fontWeight: 600 }}>{r.roas ? r.roas.toFixed(1) + "×" : "—"}</td>
                       </tr>
                     ))}
+                    {adsTrend.length > 0 && (
+                      <tr style={{ borderTop: `2px solid ${C.line}` }}>
+                        <td className="py-2 px-2" style={{ fontWeight: 700, color: C.brown }}>{"TOTAL"}</td>
+                        <td className="py-2 px-2 text-right" style={{ fontWeight: 700, color: C.brown }}>{rm(adsTotal.spend)}</td>
+                        <td className="py-2 px-2 text-right" style={{ fontWeight: 700, color: C.brown }}>{adsTotal.msg.toLocaleString()}</td>
+                        <td className="py-2 px-2 text-right" style={{ fontWeight: 700, color: C.brown }}>{adsTotal.leads.toLocaleString()}</td>
+                        <td className="py-2 px-2 text-right" style={{ fontWeight: 700, color: adsTotal.cpl == null ? C.sub : adsTotal.cpl <= 80 ? C.sage : adsTotal.cpl <= 110 ? C.gold : C.clay }}>{adsTotal.cpl != null ? "RM " + adsTotal.cpl.toFixed(0) : "—"}</td>
+                        <td className="py-2 px-2 text-right" style={{ fontWeight: 700, color: C.brown }}>{adsTotal.sales ? rm(adsTotal.sales) : "—"}</td>
+                        <td className="py-2 px-2 text-right" style={{ fontWeight: 700, color: adsTotal.roas ? (adsTotal.roas >= 8 ? C.sage : C.gold) : C.sub }}>{adsTotal.roas ? adsTotal.roas.toFixed(1) + "×" : "—"}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
