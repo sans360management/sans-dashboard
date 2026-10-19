@@ -129,6 +129,15 @@ export default async function handler(req, res) {
     }
 
     // 按用户权限过滤数据（被限 tab 的数据键置空，真正不下发），并附上该用户能看的 tab
+    // 健全性检查：ads 的 leads / msg 是「笔数」，必须是整数。
+    // 出现小数 = 来源表栏位错位（2026-09 真实发生过：月分页新增栏位，汇总脚本按写死位置读 → 读到成本栏）。
+    // 这里只标记不改数，让看板跳警告，避免错误数字再静悄悄混过去。
+    if (data && Array.isArray(data.ads)) {
+      const bad = data.ads
+        .filter((a) => !Number.isInteger(Number(a.leads)) || !Number.isInteger(Number(a.msg)))
+        .map((a) => a.m);
+      if (bad.length) data.adsWarning = "Ads 数据异常：" + bad.join("、") + " 的 Leads / Inbox Msgs 出现小数，极可能是来源表栏位错位，数字不可信。";
+    }
     const filtered = filterData(data, user.tabs);
     filtered.allowedTabs = user.tabs;
     filtered.userName = user.name;
