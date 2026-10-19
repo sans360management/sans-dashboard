@@ -20,6 +20,7 @@ const LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACqCAYAAAAqVERL
 /* ----------------------------- 数据 (来自 Drive，已验算) ----------------------------- */
 
 let ADS = [], BRANCHES = [], ADS_MONTHS = [], BRANCH_MONTHS = [];
+let ADS_WARNING = "";
 let ADS_DAILY = {};
 let BRANCH_DAILY = {};
 let OUTLET_SALES = [];
@@ -1202,6 +1203,11 @@ function Dashboard({ dataVersion }) {
             </div>
 
             <Panel title={"Monthly Ad Detail"} hint={"New Lead Sales = TOTAL New Leads SALES · June in progress"}>
+              {ADS_WARNING && (
+                <div style={{ background: C.clay + "1a", border: `1px solid ${C.clay}`, borderRadius: 10, padding: "9px 12px", marginBottom: 10, color: C.clay, fontSize: 12.5, fontWeight: 600 }}>
+                  {"⚠️ " + ADS_WARNING}
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full" style={{ fontSize: 13, borderCollapse: "collapse" }}>
                   <thead><tr style={{ color: C.sub, fontSize: 11 }}>
@@ -1406,6 +1412,7 @@ function Dashboard({ dataVersion }) {
 /* ===================== 数据接入 · 登录 · 自动刷新 ===================== */
 function applyData(d) {
   ADS = d.ads || [];
+  ADS_WARNING = d.adsWarning || "";   // 后端健全性检查：来源表栏位错位时会有值
   BRANCHES = d.branches || [];
   ADS_MONTHS = d.adsMonths || [];
   BRANCH_MONTHS = d.branchMonths || [];
