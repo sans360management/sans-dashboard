@@ -4,11 +4,25 @@
 // 门控：CS_KEY（链接 /cs?k=… 带的 key）。需 ANTHROPIC_API_KEY + GHL_TOKEN + GHL_LOCATION_ID。
 // ⚠️ 顾客名字/电话/聊天内容会送到 Anthropic API 处理。
 import Anthropic from "@anthropic-ai/sdk";
-import { listConversations, findContact, getConversation, getContact, listNewLeads } from "../lib/ghl.js";
+import { listConversations, findContact, getConversation, getContact, listNewLeads, listAppointments } from "../lib/ghl.js";
 
-export const config = { maxDuration: 60 };
+// 一次查几十个 Lead（每人要查对话）+ AI 思考，60 秒不够
+export const config = { maxDuration: 120 };
 
 const TOOLS = [
+  {
+    name: "list_appointments",
+    description: "按「预约日期」（马来西亚时间）列预约，按分店分组 —— 回答「今天/明天要来店几个人」「这星期某分店有几个预约」「谁取消了」都用这个。一次拿全部分店的日历，数字精确。每个预约有：时间、顾客名字电话、状态（confirmed/showed/noshow/cancelled）、负责员工、哪天约的、是否同一时段重复预约。",
+    input_schema: {
+      type: "object",
+      properties: {
+        date_from: { type: "string", description: "马来西亚日期 YYYY-MM-DD，默认今天" },
+        date_to: { type: "string", description: "马来西亚日期 YYYY-MM-DD（含），默认等于 date_from；最多 31 天" },
+        branch: { type: "string", description: "只看分店名字包含这个字的，例如 'Kota Damansara'、'Molek'；不填 = 全部分店" },
+        include_cancelled: { type: "boolean", description: "是否列出已取消的，默认 true" },
+      },
+    },
+  },
   {
     name: "list_new_leads",
     description: "按「注册日期」（进入 pipeline 的时间，马来西亚时间）列新 Lead —— 回答「今天/昨天/这星期有几个人 register」「今天的 Lead 约到几个」都用这个，数字是精确的。每个人附带：注册时间、阶段、负责员工、预约（时间+分店）、最后一条信息是谁发的、我们的信息已读没、要不要回。默认 RM199 pipeline。",
@@ -58,6 +72,7 @@ const TOOLS = [
 ];
 
 const RUN = {
+  list_appointments: listAppointments,
   list_new_leads: listNewLeads,
   list_conversations: listConversations,
   find_contact: findContact,
@@ -73,7 +88,8 @@ const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，主打 
 - 常见 pipeline：「RM199 Landing Page Form Submission」（LP Registered → Pending Appointment → Done Appointment / Cancel Appointment / Not Interested / No Response）、「NeckFix Lead Status」。tags 常见：月份（如 "2026 oct leads"）、日期（如 "5-oct-26"）、语言（english/chinese/malay）、分店名、"rm199 neckfix register lp" 等。
 
 回答规则：
-- 问「几个人 register / 新 Lead / 今天进来的 Lead / 约到几个」→ 一定用 list_new_leads，直接给精确数字，不要用 tags 或最后信息时间去猜。结果按状态分组（✅ 已约：预约时间+分店；⏳ 已发时段等顾客选；🔴 顾客回了要回复；其他），并点出谁的信息还没读、谁该再追。
+- 问「几个人 register / 新 Lead / 今天进来的 Lead / 约到几个」→ 一定用 list_new_leads，直接给精确数字，不要用 tags 或最后信息时间去猜。结果按状态分组（✅ 已约：预约时间+分店；⏳ 已发时段等顾客选；🔴 顾客回了要回复；其他），并点出谁的信息还没读、谁该再追。手动导入的 Lead 要和落地页当天注册的分开讲（导入日是进系统的日子，拿到联系的日期看日期 tag）。
+- 问「今天/明天要来店几个人」「某天有几个预约」「谁取消了」→ 用 list_appointments（按预约日期），不要用 list_new_leads 去凑。数字说「有效预约 X 个（Y 人）」，按分店列；同一时段重复预约要指出来。
 - 用客服问的语言回答（华语就用华语，英文就用英文）。简洁、直接，列表要好扫：名字 · 电话 · 状态 · 多久没动 · 要做什么。
 - 列"需要回复"时，把只回"收到/OK/谢谢/👍"之类不需要再回的，和真正在问问题、要预约的分开；真正要回的放前面。
 - 被问到某个顾客时，先 find_contact，再按需要 get_conversation / get_contact，说清楚：现在在哪个阶段、最后谁说了什么、下一步建议怎么回（可以给一段可直接复制的回复草稿，语言跟顾客一样）。
