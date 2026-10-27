@@ -123,7 +123,8 @@ export default async function handler(req, res) {
     const client = new Anthropic();
     for (let round = 0; round < 8; round++) {
       const stream = client.beta.messages.stream({
-        model: "claude-opus-5-5",
+        // Sonnet 5.5：价钱是 Opus 5.5 的一半，查询型问题够用；effort 保持 medium（老板要求）
+        model: "claude-sonnet-5-5",
         max_tokens: 16000,
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
