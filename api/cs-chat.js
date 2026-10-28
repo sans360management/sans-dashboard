@@ -4,12 +4,22 @@
 // 门控：CS_KEY（链接 /cs?k=… 带的 key）。需 ANTHROPIC_API_KEY + GHL_TOKEN + GHL_LOCATION_ID。
 // ⚠️ 顾客名字/电话/聊天内容会送到 Anthropic API 处理。
 import Anthropic from "@anthropic-ai/sdk";
-import { listConversations, findContact, getConversation, getContact, listNewLeads, listAppointments } from "../lib/ghl.js";
+import { listConversations, findContact, getConversation, getContact, listNewLeads, listAppointments, listWindowClosing } from "../lib/ghl.js";
 
 // 一次查几十个 Lead（每人要查对话）+ AI 思考，60 秒不够
 export const config = { maxDuration: 120 };
 
 const TOOLS = [
+  {
+    name: "list_window_closing",
+    description: "列出 WhatsApp 24 小时窗口还开着、但客服还没回过的对话（窗口 = 顾客最后一条 WhatsApp 后 24 小时，关闭后只能发模板）。回答「哪些人窗口快关闭」「24 小时内要回谁」「客服漏回了谁」都用这个。已排除客服已回的；自动 workflow、群发不算客服回复。结果分组：🔴 客服还没回（剩余时间少的在前）、🟡 只回自动提醒 OK/收到/谢谢、⚠️ 可疑文件（.zip/.iso、叫人用电脑打开、invoice —— 可能被盗号）、⚠️查询失败。每人有：名字、电话、剩几小时、顾客最后说什么、阶段、语言。",
+    input_schema: {
+      type: "object",
+      properties: {
+        max_hours_left: { type: "number", description: "只看剩不到几小时的（例如 6 = 6 小时内关闭），默认 24 = 全部还开着的" },
+      },
+    },
+  },
   {
     name: "list_appointments",
     description: "按「预约日期」（马来西亚时间）列预约，按分店分组 —— 回答「今天/明天要来店几个人」「这星期某分店有几个预约」「谁取消了」都用这个。一次拿全部分店的日历，数字精确。每个预约有：时间、顾客名字电话、状态（confirmed/showed/noshow/cancelled）、负责员工、哪天约的、是否同一时段重复预约。",
@@ -72,6 +82,7 @@ const TOOLS = [
 ];
 
 const RUN = {
+  list_window_closing: listWindowClosing,
   list_appointments: listAppointments,
   list_new_leads: listNewLeads,
   list_conversations: listConversations,
@@ -90,6 +101,7 @@ const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，主打 
 回答规则：
 - 问「几个人 register / 新 Lead / 今天进来的 Lead / 约到几个」→ 一定用 list_new_leads，直接给精确数字，不要用 tags 或最后信息时间去猜。结果按状态分组（✅ 已约：预约时间+分店；⏳ 已发时段等顾客选；🔴 顾客回了要回复；其他），并点出谁的信息还没读、谁该再追。手动导入的 Lead 要和落地页当天注册的分开讲（导入日是进系统的日子，拿到联系的日期看日期 tag）。
 - 问「今天/明天要来店几个人」「某天有几个预约」「谁取消了」→ 用 list_appointments（按预约日期），不要用 list_new_leads 去凑。数字说「有效预约 X 个（Y 人）」，按分店列；同一时段重复预约要指出来。
+- 问「24 小时窗口」「窗口快关闭 / 快过期」「哪些人还没回、过了就不能回」「客服漏回了谁」→ 一定用 list_window_closing，不要用 list_conversations 去凑（need_reply 看不到「workflow 自动回了、其实客服没回」的人）。照工具的分组回答：🔴 先列，剩余时间最少的在最前，每人一行：名字 · 电话 · 剩几小时 · 顾客最后说什么 · 阶段 · 语言；🟡 只回 OK/收到 的简单带过；⚠️ 可疑文件要明确提醒「不要打开附件、不要点链接，可能是被盗号」。提醒客服：窗口关闭后只能发已审核的模板。
 - 用客服问的语言回答（华语就用华语，英文就用英文）。简洁、直接，列表要好扫：名字 · 电话 · 状态 · 多久没动 · 要做什么。
 - 列"需要回复"时，把只回"收到/OK/谢谢/👍"之类不需要再回的，和真正在问问题、要预约的分开；真正要回的放前面。
 - 被问到某个顾客时，先 find_contact，再按需要 get_conversation / get_contact，说清楚：现在在哪个阶段、最后谁说了什么、下一步建议怎么回（可以给一段可直接复制的回复草稿，语言跟顾客一样）。
