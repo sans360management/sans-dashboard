@@ -128,6 +128,10 @@ export default async function handler(req, res) {
   while (messages.length && messages[0].role !== "user") messages.shift();
   if (!messages.length) { res.status(400).json({ error: "请输入问题" }); return; }
 
+  // 客服在页面上选：sonnet（默认，省钱）或 opus（细腻，约贵一倍）。只接受这两个，别的一律当 sonnet。
+  const MODELS = { sonnet: "claude-sonnet-5-5", opus: "claude-opus-5-5" };
+  const modelKey = body.model === "opus" ? "opus" : "sonnet";
+
   const now = new Date().toLocaleString("en-GB", { timeZone: "Asia/Kuala_Lumpur", dateStyle: "full", timeStyle: "short" });
   const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
 
@@ -135,8 +139,8 @@ export default async function handler(req, res) {
     const client = new Anthropic();
     for (let round = 0; round < 8; round++) {
       const stream = client.beta.messages.stream({
-        // Sonnet 5.5：价钱是 Opus 5.5 的一半，查询型问题够用；effort 保持 medium（老板要求）
-        model: "claude-sonnet-5-5",
+        // effort 两个模型都保持 medium（老板要求）
+        model: MODELS[modelKey],
         max_tokens: 16000,
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
@@ -168,7 +172,7 @@ export default async function handler(req, res) {
       }
       const text = (msg.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
       res.setHeader("Cache-Control", "no-store");
-      res.status(200).json({ text: text || "（没有可显示的回复，请换个问法）" });
+      res.status(200).json({ text: text || "（没有可显示的回复，请换个问法）", model: modelKey });
       return;
     }
     res.status(200).json({ text: "查询太多轮了，请把问题问得更具体一点再试。" });

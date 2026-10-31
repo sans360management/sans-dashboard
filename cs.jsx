@@ -44,6 +44,30 @@ function Md({ text }) {
   );
 }
 
+// WhatsApp 式图标（Material "mic" / "stop"）
+const MicIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z" />
+  </svg>
+);
+const StopIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+);
+
+// 每个客服自己的偏好（模型、语音语言），存在这台浏览器；读写失败就用默认值
+const pref = {
+  get: (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* 无痕模式 */ } },
+};
+
+// 浏览器自带的语音识别（Chrome / Edge / Android / iPhone Safari）；不支持就不显示麦克风
+const SR = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+const LANGS = [
+  { id: "zh-CN", label: "中" },
+  { id: "en-MY", label: "EN" },
+  { id: "ms-MY", label: "BM" },
+];
+
 function Copy({ text }) {
   const [ok, setOk] = useState(false);
   return (
@@ -61,23 +85,59 @@ export default function CsApp() {
   const [err, setErr] = useState("");
   const endRef = useRef(null);
   const taRef = useRef(null);
+  const [model, setModel] = useState(() => (pref.get("sans_cs_model", "sonnet") === "opus" ? "opus" : "sonnet"));
+  const [lang, setLang] = useState(() => pref.get("sans_cs_voice_lang", "zh-CN"));
+  const [listening, setListening] = useState(false);
+  const recRef = useRef(null);
+  const baseRef = useRef("");
+
+  const pickModel = (m) => { setModel(m); pref.set("sans_cs_model", m); };
+  const nextLang = () => {
+    const i = LANGS.findIndex((l) => l.id === lang);
+    const n = LANGS[(i + 1) % LANGS.length].id;
+    setLang(n); pref.set("sans_cs_voice_lang", n);
+  };
+
+  // 按一下开始听，再按一下停；说的话接在输入框原有文字后面，确认后再按发送
+  const toggleMic = () => {
+    if (!SR) return;
+    if (listening && recRef.current) { recRef.current.stop(); return; }
+    const rec = new SR();
+    rec.lang = lang; rec.interimResults = true; rec.continuous = true;
+    baseRef.current = input ? input.replace(/\s*$/, " ") : "";
+    rec.onresult = (e) => {
+      let said = "";
+      for (let i = 0; i < e.results.length; i++) said += e.results[i][0].transcript;
+      setInput(baseRef.current + said);
+    };
+    rec.onerror = (e) => { if (e.error === "not-allowed") setErr("请允许浏览器使用麦克风"); setListening(false); };
+    rec.onend = () => { setListening(false); recRef.current = null; };
+    recRef.current = rec;
+    setErr("");
+    rec.start();
+    setListening(true);
+  };
+  useEffect(() => () => { recRef.current && recRef.current.abort(); }, []);
+  // 输入框高度跟着语音文字长高
+  useEffect(() => { const t = taRef.current; if (t) { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; } }, [input]);
 
   useEffect(() => { try { sessionStorage.setItem(STORE, JSON.stringify(chat)); } catch (e) { /* 无痕模式 */ } }, [chat]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [chat, busy]);
 
   const send = async (content) => {
     if (busy || !content || !content.trim()) return;
+    if (recRef.current) recRef.current.stop();
     const next = [...chat, { role: "user", text: content.trim() }];
     setChat(next); setInput(""); setBusy(true); setErr("");
     if (taRef.current) taRef.current.style.height = "auto";
     try {
       const r = await fetch("/api/cs-chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ k: KEY, messages: next.map((m) => ({ role: m.role, content: m.text })) }),
+        body: JSON.stringify({ k: KEY, model, messages: next.map((m) => ({ role: m.role, content: m.text })) }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
-      setChat((c) => [...c, { role: "assistant", text: j.text || "" }]);
+      setChat((c) => [...c, { role: "assistant", text: j.text || "", model: j.model || model }]);
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
@@ -91,15 +151,25 @@ export default function CsApp() {
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: C.surface, color: C.ink, fontFamily: "system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif" }}>
-      <header style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${C.line}`, background: "#fff" }}>
+      <header style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", padding: "12px 16px", borderBottom: `1px solid ${C.line}`, background: "#fff" }}>
         <div>
           <div style={{ fontWeight: 700, color: C.brown, fontSize: 16 }}>Sans 客服助手</div>
           <div style={{ fontSize: 12, color: C.sub }}>查顾客状态 · 只能查看，不会发信息给顾客</div>
         </div>
-        {chat.length > 0 && (
-          <button onClick={() => { setChat([]); setErr(""); }} disabled={busy}
-            style={{ border: `1px solid ${C.line}`, background: C.sand, color: C.ink, borderRadius: 8, padding: "6px 10px", fontSize: 12.5, cursor: "pointer" }}>新对话</button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div role="radiogroup" aria-label="AI 模型" title="Sonnet 省钱；Opus 回答更细腻，费用约贵一倍"
+            style={{ display: "flex", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+            {[["sonnet", "Sonnet 省钱"], ["opus", "Opus 细腻"]].map(([id, label]) => (
+              <button key={id} role="radio" aria-checked={model === id} onClick={() => pickModel(id)} disabled={busy}
+                style={{ border: "none", padding: "6px 10px", fontSize: 12.5, cursor: "pointer",
+                  background: model === id ? C.brown : "#fff", color: model === id ? "#fff" : C.ink, fontWeight: model === id ? 600 : 400 }}>{label}</button>
+            ))}
+          </div>
+          {chat.length > 0 && (
+            <button onClick={() => { setChat([]); setErr(""); }} disabled={busy}
+              style={{ border: `1px solid ${C.line}`, background: C.sand, color: C.ink, borderRadius: 8, padding: "6px 10px", fontSize: 12.5, cursor: "pointer" }}>新对话</button>
+          )}
+        </div>
       </header>
 
       <main style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
@@ -125,10 +195,15 @@ export default function CsApp() {
               }}>
                 {m.role === "user" ? m.text : <Md text={m.text} />}
               </div>
-              {m.role === "assistant" && <Copy text={m.text} />}
+              {m.role === "assistant" && (
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <Copy text={m.text} />
+                  {m.model && <span style={{ color: C.sub, fontSize: 11, padding: "4px 0 0 12px", opacity: 0.8 }}>{m.model === "opus" ? "Opus" : "Sonnet"}</span>}
+                </div>
+              )}
             </div>
           ))}
-          {busy && <div style={{ color: C.sub, fontSize: 13 }}>正在查询…（约 10–40 秒）</div>}
+          {busy && <div style={{ color: C.sub, fontSize: 13 }}>正在查询…（{model === "opus" ? "Opus" : "Sonnet"}，约 10–60 秒）</div>}
           {err && <div style={{ color: C.clay, fontSize: 13 }}>{err}</div>}
           <div ref={endRef} />
         </div>
@@ -137,11 +212,28 @@ export default function CsApp() {
       <form onSubmit={(e) => { e.preventDefault(); send(input); }}
         style={{ flex: "none", borderTop: `1px solid ${C.line}`, background: "#fff", padding: "10px 16px calc(10px + env(safe-area-inset-bottom))" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", gap: 8, alignItems: "flex-end" }}>
+          {SR && (
+            <>
+              <button type="button" onClick={nextLang} disabled={busy || listening} title="语音语言（按一下切换）"
+                style={{ border: `1px solid ${C.line}`, background: "#fff", color: C.ink, borderRadius: 10, padding: "10px 8px", fontSize: 13, cursor: "pointer", minWidth: 40 }}>
+                {(LANGS.find((l) => l.id === lang) || LANGS[0]).label}
+              </button>
+            </>
+          )}
           <textarea ref={taRef} rows={1} value={input} onChange={(e) => setInput(e.target.value)} disabled={busy}
             onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(input); } }}
-            placeholder="问顾客状态、名字或电话…"
+            placeholder={listening ? "正在听…说完再按一下" : "问顾客状态、名字或电话…"}
             style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 15, lineHeight: 1.5, outline: "none", resize: "none", maxHeight: 140 }} />
+          {SR && (
+            <button type="button" onClick={toggleMic} disabled={busy} aria-label={listening ? "停止语音输入" : "语音输入"}
+              title={listening ? "停止" : "语音输入"}
+              style={{ flex: "none", width: 44, height: 44, borderRadius: "50%", border: "none", cursor: "pointer",
+                display: "grid", placeItems: "center", color: "#fff",
+                background: listening ? C.clay : C.brown, opacity: busy ? 0.5 : 1 }}>
+              {listening ? <StopIcon /> : <MicIcon />}
+            </button>
+          )}
           <button type="submit" disabled={busy || !input.trim()}
             style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 10, padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: (busy || !input.trim()) ? 0.5 : 1 }}>发送</button>
         </div>
