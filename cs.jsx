@@ -44,6 +44,16 @@ function Md({ text }) {
   );
 }
 
+// WhatsApp 式图标（Material "mic" / "stop"）
+const MicIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z" />
+  </svg>
+);
+const StopIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+);
+
 // 每个客服自己的偏好（模型、语音语言），存在这台浏览器；读写失败就用默认值
 const pref = {
   get: (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
@@ -57,37 +67,6 @@ const LANGS = [
   { id: "en-MY", label: "EN" },
   { id: "ms-MY", label: "BM" },
 ];
-
-// 朗读：去掉 markdown 符号；有中文就用华语声音，否则英文
-const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
-function speakText(text) {
-  const plain = String(text)
-    .replace(/\*\*/g, "").replace(/^#{1,4}\s+/gm, "").replace(/^\s*[-•*]\s+/gm, "")
-    .replace(/\|/g, " ").replace(/-{3,}/g, " ").replace(/[🔴🟡🟢⚪⚠️✅⏳❌🔊]/gu, "");
-  const u = new SpeechSynthesisUtterance(plain);
-  u.lang = /[一-鿿]/.test(plain) ? "zh-CN" : "en-US";
-  u.rate = 1.05;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-  return u;
-}
-
-function Speak({ text }) {
-  const [on, setOn] = useState(false);
-  if (!canSpeak) return null;
-  const toggle = () => {
-    if (on) { window.speechSynthesis.cancel(); setOn(false); return; }
-    const u = speakText(text);
-    setOn(true);
-    u.onend = u.onerror = () => setOn(false);
-  };
-  return (
-    <button onClick={toggle}
-      style={{ border: "none", background: "transparent", color: C.sub, fontSize: 12, cursor: "pointer", padding: "4px 0 0 12px" }}>
-      {on ? "⏹ 停止" : "🔊 朗读"}
-    </button>
-  );
-}
 
 function Copy({ text }) {
   const [ok, setOk] = useState(false);
@@ -138,7 +117,7 @@ export default function CsApp() {
     rec.start();
     setListening(true);
   };
-  useEffect(() => () => { recRef.current && recRef.current.abort(); canSpeak && window.speechSynthesis.cancel(); }, []);
+  useEffect(() => () => { recRef.current && recRef.current.abort(); }, []);
   // 输入框高度跟着语音文字长高
   useEffect(() => { const t = taRef.current; if (t) { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; } }, [input]);
 
@@ -187,7 +166,7 @@ export default function CsApp() {
             ))}
           </div>
           {chat.length > 0 && (
-            <button onClick={() => { setChat([]); setErr(""); canSpeak && window.speechSynthesis.cancel(); }} disabled={busy}
+            <button onClick={() => { setChat([]); setErr(""); }} disabled={busy}
               style={{ border: `1px solid ${C.line}`, background: C.sand, color: C.ink, borderRadius: 8, padding: "6px 10px", fontSize: 12.5, cursor: "pointer" }}>新对话</button>
           )}
         </div>
@@ -218,7 +197,7 @@ export default function CsApp() {
               </div>
               {m.role === "assistant" && (
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  <Copy text={m.text} /><Speak text={m.text} />
+                  <Copy text={m.text} />
                   {m.model && <span style={{ color: C.sub, fontSize: 11, padding: "4px 0 0 12px", opacity: 0.8 }}>{m.model === "opus" ? "Opus" : "Sonnet"}</span>}
                 </div>
               )}
@@ -239,18 +218,22 @@ export default function CsApp() {
                 style={{ border: `1px solid ${C.line}`, background: "#fff", color: C.ink, borderRadius: 10, padding: "10px 8px", fontSize: 13, cursor: "pointer", minWidth: 40 }}>
                 {(LANGS.find((l) => l.id === lang) || LANGS[0]).label}
               </button>
-              <button type="button" onClick={toggleMic} disabled={busy} aria-label={listening ? "停止语音输入" : "语音输入"}
-                style={{ border: "none", borderRadius: 10, padding: "10px 12px", fontSize: 16, cursor: "pointer",
-                  background: listening ? C.clay : C.sand, color: listening ? "#fff" : C.ink }}>
-                {listening ? "⏹" : "🎤"}
-              </button>
             </>
           )}
           <textarea ref={taRef} rows={1} value={input} onChange={(e) => setInput(e.target.value)} disabled={busy}
             onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(input); } }}
-            placeholder={listening ? "正在听…说完按 ⏹" : "问顾客状态、名字或电话…"}
+            placeholder={listening ? "正在听…说完再按一下" : "问顾客状态、名字或电话…"}
             style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 15, lineHeight: 1.5, outline: "none", resize: "none", maxHeight: 140 }} />
+          {SR && (
+            <button type="button" onClick={toggleMic} disabled={busy} aria-label={listening ? "停止语音输入" : "语音输入"}
+              title={listening ? "停止" : "语音输入"}
+              style={{ flex: "none", width: 44, height: 44, borderRadius: "50%", border: "none", cursor: "pointer",
+                display: "grid", placeItems: "center", color: "#fff",
+                background: listening ? C.clay : C.brown, opacity: busy ? 0.5 : 1 }}>
+              {listening ? <StopIcon /> : <MicIcon />}
+            </button>
+          )}
           <button type="submit" disabled={busy || !input.trim()}
             style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 10, padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: (busy || !input.trim()) ? 0.5 : 1 }}>发送</button>
         </div>
