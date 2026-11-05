@@ -4,12 +4,24 @@
 // 门控：CS_KEY（链接 /cs?k=… 带的 key）。需 ANTHROPIC_API_KEY + GHL_TOKEN + GHL_LOCATION_ID。
 // ⚠️ 顾客名字/电话/聊天内容会送到 Anthropic API 处理。
 import Anthropic from "@anthropic-ai/sdk";
-import { listConversations, findContact, getConversation, getContact, listNewLeads, listAppointments, listWindowClosing } from "../lib/ghl.js";
+import { listConversations, findContact, getConversation, getContact, listNewLeads, listAppointments, listWindowClosing, checkUsernameReply } from "../lib/ghl.js";
 
 // 一次查几十个 Lead（每人要查对话）+ AI 思考，60 秒不够
 export const config = { maxDuration: 120 };
 
 const TOOLS = [
+  {
+    name: "prepare_username_reply",
+    description: "替 username 顾客（WhatsApp 用户名、系统收件箱显示不能打字的那种）准备一条 WhatsApp 回复草稿。你**不能**发送：这个工具只会检查资格（必须是 username 顾客、24 小时窗口还开着、有电话号码），合格就把草稿显示给客服，由客服改内容、输入自己的 PIN、按确认才会发出。只有客服要你「帮我回 / 帮我发 / 回复她」某位顾客时才用。message 用顾客的语言写，像真人客服，简短自然。",
+    input_schema: {
+      type: "object",
+      properties: {
+        contactId: { type: "string", description: "顾客的 contactId（先用 find_contact 或其他工具找到）" },
+        message: { type: "string", description: "要发给顾客的完整内容（顾客的语言）" },
+      },
+      required: ["contactId", "message"],
+    },
+  },
   {
     name: "list_window_closing",
     description: "列出 WhatsApp 24 小时窗口还开着、但客服还没回过的对话（窗口 = 顾客最后一条 WhatsApp 后 24 小时，关闭后只能发模板）。回答「哪些人窗口快关闭」「24 小时内要回谁」「客服漏回了谁」都用这个。已排除客服已回的；自动 workflow、群发不算客服回复。结果分组：🔴 按了按钮/填表在等（顾客按 English/Weekend/Check slots 等按钮或填表，系统只自动回、客服没回 —— 最容易漏）、🔴 打字在等、🟡 只回自动提醒 OK/收到/谢谢、⚠️ 可疑文件（.zip/.iso、叫人用电脑打开、invoice —— 可能被盗号）、⚠️查询失败。每人有：名字、电话、等了多久、剩几小时、按了哪些按钮或最后说什么、是否客服从来没回过、阶段、语言。",
@@ -94,6 +106,7 @@ const RUN = {
 const PERSONA = `你是 Sans Wellness（马来西亚颈肩理疗连锁，主打 RM199 NeckFix 体验，靠 Meta 广告 + WhatsApp 获客，再约到门店）的客服助手。客服会问你关于 Lead 的状态、哪些顾客要回复或跟进。你用工具去公司的客户系统查真实数据。
 
 状态怎么看：同时看 pipeline 阶段 和 tags。
+- username 顾客（WhatsApp 用户名，发件人是 MY.xxxx 编号；工具会标 ⚠️ username 顾客）：系统收件箱会显示不能打字、只能选模板，但 24 小时窗口其实开着。客服要你帮这类顾客回复时，用 prepare_username_reply 准备草稿；你不能自己发，草稿会显示给客服确认。一般顾客（不是 username）请客服直接在系统收件箱回，不要用这个工具。
 - "需要回复" = 顾客在等我们、客服还没亲手回。问「谁需要回复 / 谁在等 / 漏回了谁 / 还没回的」→ **一定先用 list_window_closing**：它包含「顾客按了按钮或填表、系统自动回了、客服从来没回」的人（这批最重要，最后一条是自动信息，list_conversations need_reply 看不到）。要看超过 24 小时以前的旧对话，才另外用 list_conversations filter=need_reply。
 - "需要跟进" = 我们最后发信息（客服、自动 workflow 或群发都算），顾客还没回（filter=need_followup）。
 - 常见 pipeline：「RM199 Landing Page Form Submission」（LP Registered → Pending Appointment → Done Appointment / Cancel Appointment / Not Interested / No Response）、「NeckFix Lead Status」。tags 常见：月份（如 "2026 oct leads"）、日期（如 "5-oct-26"）、语言（english/chinese/malay）、分店名、"rm199 neckfix register lp" 等。
@@ -122,6 +135,7 @@ export default async function handler(req, res) {
   if (!process.env.ANTHROPIC_API_KEY) { res.status(500).json({ error: "AI 未配置：请在 Vercel 加环境变量 ANTHROPIC_API_KEY" }); return; }
   if (!process.env.GHL_TOKEN || !process.env.GHL_LOCATION_ID) { res.status(500).json({ error: "系统未配置，请联系管理员" }); return; }
 
+  const drafts = []; // prepare_username_reply 准备好的草稿，交给页面让客服确认
   let messages = (Array.isArray(body.messages) ? body.messages : [])
     .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
     .slice(-20)
@@ -160,6 +174,18 @@ export default async function handler(req, res) {
       if (msg.stop_reason === "tool_use" && toolUses.length) {
         messages.push({ role: "assistant", content: msg.content });
         const results = await Promise.all(toolUses.map(async (tu) => {
+          if (tu.name === "prepare_username_reply") {
+            // 只做检查、把草稿交给页面；真正发送要客服在页面上按确认（/api/cs-send）
+            try {
+              const inp = tu.input || {};
+              const chk = await checkUsernameReply({ contactId: inp.contactId });
+              if (!chk.ok) return { type: "tool_result", tool_use_id: tu.id, content: `不能从这里发：${chk.reason}` };
+              drafts.push({ contactId: chk.contactId, name: chk.name, phone: chk.phone, closeAt: chk.closeAt, message: String(inp.message || "").slice(0, 2000) });
+              return { type: "tool_result", tool_use_id: tu.id, content: `草稿已显示给客服（${chk.name} ${chk.phone}，窗口 ${new Date(chk.closeAt).toLocaleString("en-GB", { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} 关闭）。还没发出 —— 要客服按「确认发送」。回答里不要说已发送。` };
+            } catch (e) {
+              return { type: "tool_result", tool_use_id: tu.id, content: "查询失败：" + (e && e.message ? e.message : String(e)), is_error: true };
+            }
+          }
           const fn = RUN[tu.name];
           try {
             if (!fn) throw new Error("未知工具 " + tu.name);
@@ -173,7 +199,7 @@ export default async function handler(req, res) {
       }
       const text = (msg.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
       res.setHeader("Cache-Control", "no-store");
-      res.status(200).json({ text: text || "（没有可显示的回复，请换个问法）", model: modelKey });
+      res.status(200).json({ text: text || "（没有可显示的回复，请换个问法）", model: modelKey, drafts });
       return;
     }
     res.status(200).json({ text: "查询太多轮了，请把问题问得更具体一点再试。" });
