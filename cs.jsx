@@ -68,6 +68,54 @@ const LANGS = [
   { id: "ms-MY", label: "BM" },
 ];
 
+// username 顾客的回复草稿：客服可改内容，输入自己的 PIN，按「确认发送」才会发出（AI 不能自己发）
+const PIN_KEY = "sans_cs_pin"; // 这个分页记住 PIN，关掉分页就要重新输入
+const fmtClose = (ms) => new Date(ms).toLocaleString("en-GB", { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+function DraftCard({ d, onSent }) {
+  const [text, setText] = useState(d.message || "");
+  const [pin, setPin] = useState(() => { try { return sessionStorage.getItem(PIN_KEY) || ""; } catch (e) { return ""; } });
+  const [state, setState] = useState(d.sent ? "sent" : "idle"); // idle | sending | sent
+  const [msg, setMsg] = useState(d.sent ? `✓ 已由 ${d.sent.staff} 发出（${fmtClose(d.sent.at)}）` : "");
+  const closed = Date.now() > (d.closeAt || 0);
+  const send = async () => {
+    if (state !== "idle" || !text.trim() || !pin.trim()) return;
+    setState("sending"); setMsg("");
+    try {
+      const r = await fetch("/api/cs-send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ k: KEY, pin: pin.trim(), contactId: d.contactId, message: text.trim() }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      try { sessionStorage.setItem(PIN_KEY, pin.trim()); } catch (e) { /* 无痕模式 */ }
+      setState("sent"); setMsg(`✓ 已由 ${j.staff} 发出（${fmtClose(j.sentAt)}）`);
+      onSent && onSent({ staff: j.staff, at: j.sentAt, text: text.trim() });
+    } catch (e) { setState("idle"); setMsg("✗ " + e.message); }
+  };
+  const done = state === "sent";
+  return (
+    <div style={{ marginTop: 8, border: `1px solid ${done ? C.line : C.brown}`, borderRadius: 12, background: done ? C.sand : "#fff", padding: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: C.brown }}>WhatsApp 回复草稿 · 还没发出</div>
+      <div style={{ fontSize: 12.5, color: C.sub, margin: "4px 0 8px" }}>
+        发给 <b style={{ color: C.ink }}>{d.name}</b> {d.phone} · 窗口 {fmtClose(d.closeAt)} 关闭{closed ? "（已关闭）" : ""}
+      </div>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} disabled={done || state === "sending"} rows={4}
+        style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8, border: `1px solid ${C.line}`, background: C.surface, color: C.ink, fontSize: 14, lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }} />
+      {!done && (
+        <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <input type="password" inputMode="numeric" autoComplete="off" placeholder="你的 PIN" value={pin} onChange={(e) => setPin(e.target.value)} disabled={state === "sending"}
+            style={{ width: 110, padding: "8px 10px", borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 14 }} />
+          <button onClick={send} disabled={state === "sending" || !text.trim() || !pin.trim() || closed}
+            style={{ border: "none", background: C.brown, color: "#fff", borderRadius: 8, padding: "9px 14px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: (state === "sending" || !text.trim() || !pin.trim() || closed) ? 0.5 : 1 }}>
+            {state === "sending" ? "发送中…" : "确认发送"}
+          </button>
+        </div>
+      )}
+      {msg && <div style={{ fontSize: 12.5, marginTop: 6, color: msg.startsWith("✓") ? "#4E7A45" : C.clay }}>{msg}</div>}
+    </div>
+  );
+}
+
 function Copy({ text }) {
   const [ok, setOk] = useState(false);
   return (
@@ -137,7 +185,7 @@ export default function CsApp() {
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
-      setChat((c) => [...c, { role: "assistant", text: j.text || "", model: j.model || model }]);
+      setChat((c) => [...c, { role: "assistant", text: j.text || "", model: j.model || model, drafts: Array.isArray(j.drafts) ? j.drafts : [] }]);
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
@@ -154,7 +202,7 @@ export default function CsApp() {
       <header style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", padding: "12px 16px", borderBottom: `1px solid ${C.line}`, background: "#fff" }}>
         <div>
           <div style={{ fontWeight: 700, color: C.brown, fontSize: 16 }}>Sans 客服助手</div>
-          <div style={{ fontSize: 12, color: C.sub }}>查顾客状态 · 只能查看，不会发信息给顾客</div>
+          <div style={{ fontSize: 12, color: C.sub }}>查顾客状态 · username 顾客可在这里回复（客服确认 + PIN 才发出）</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <div role="radiogroup" aria-label="AI 模型" title="Sonnet 省钱；Opus 回答更细腻，费用约贵一倍"
@@ -195,6 +243,9 @@ export default function CsApp() {
               }}>
                 {m.role === "user" ? m.text : <Md text={m.text} />}
               </div>
+              {m.role === "assistant" && (m.drafts || []).map((d, j) => (
+                <DraftCard key={j} d={d} onSent={(sent) => setChat((c) => c.map((x, k) => k !== i ? x : { ...x, drafts: x.drafts.map((y, n) => n !== j ? y : { ...y, message: sent.text, sent }) }))} />
+              ))}
               {m.role === "assistant" && (
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <Copy text={m.text} />
