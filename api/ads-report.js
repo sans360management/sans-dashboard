@@ -44,6 +44,11 @@ export default async function handler(req, res) {
     if (!r.ok || d.error) throw new Error(d.error || ("Apps Script HTTP " + r.status));
     if (!d.date) throw new Error("找不到对应日期的 Ads 数据行");
 
+    // CPL 不读表里的 "Cost Per Lead" 栏：Nov 2026 加栏后读到别的成本栏（15 Nov 显示 RM27.00，实际 70.43）。
+    // 老板定义 CPL = Ads Spent ÷ Total New Lead，直接算。
+    const newLead = num(d.newLead);
+    const cpl = newLead > 0 ? num(d.adsSpent) / newLead : 0;
+
     // 按老板锁定 Format 拼消息（全角空格用于对齐，务必保留）
     const msg =
       `📅 ${fmtDMY(d.date)}\n` +
@@ -51,7 +56,7 @@ export default async function handler(req, res) {
       `　${rm(d.adsSpent)}　(${int(d.totalMsg)})(${int(d.totalComment)})\n` +
       `Cost per Msg (${rm(d.costPerMsg)})\n` +
       `Messenger CPL (${rm(d.msgCPL)})　　Total Lead from Messenger (${int(d.msgLead)})\n` +
-      `CPL (${rm(d.cpl)})\n` +
+      `CPL (${rm(cpl)})\n` +
       `Total New Lead (${int(d.newLead)})　　Total LP Lead (${int(d.lpLead)})`;
 
     // 只测不发：?dry=1 返回拼好的文本，不发 Telegram（用于复核）
